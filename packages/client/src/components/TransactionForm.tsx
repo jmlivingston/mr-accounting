@@ -6,7 +6,7 @@ import {
   transactionTypes,
   type TransactionInput,
 } from 'api/schemas';
-import { useState, type SubmitEvent } from 'react';
+import { useRef, useState, type SubmitEvent } from 'react';
 import { content } from '../content/content';
 import { getIssueMessage } from '../validationMessages';
 import { ErrorAlert } from './ErrorAlert';
@@ -24,6 +24,8 @@ export function TransactionForm({ onSubmit }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // State alone can't block a second submit that fires before the next render
+  const submitInFlightRef = useRef(false);
   const [defaultDate, setDefaultDate] = useState(() => toLocalDateTimeValue(new Date()));
 
   function invalidProps(field: string) {
@@ -43,6 +45,7 @@ export function TransactionForm({ onSubmit }: Props) {
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitInFlightRef.current) return;
     const form = event.currentTarget;
     const values = Object.fromEntries(new FormData(form));
     const rawDate = typeof values.date === 'string' ? values.date : '';
@@ -59,6 +62,7 @@ export function TransactionForm({ onSubmit }: Props) {
       setError(null);
       return;
     }
+    submitInFlightRef.current = true;
     setIsSubmitting(true);
     setError(null);
     setFieldErrors({});
@@ -69,6 +73,7 @@ export function TransactionForm({ onSubmit }: Props) {
     } catch (submitError) {
       setError((submitError as Error).message);
     } finally {
+      submitInFlightRef.current = false;
       setIsSubmitting(false);
     }
   }

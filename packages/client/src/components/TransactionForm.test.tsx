@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { maxDescriptionLength, maxTransactionAmount, minTransactionAmount, type TransactionInput } from 'api/schemas';
 import { describe, expect, it, vi } from 'vitest';
@@ -115,5 +115,25 @@ describe('TransactionForm', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Insufficient funds');
     expect(field('Amount')).toHaveValue(10);
     expect(screen.getByRole('button', { name: 'Submit' })).toBeEnabled();
+  });
+
+  it('shows busy and disabled while submitting and ignores a repeated submit', async () => {
+    let finish: () => void = () => undefined;
+    const pending = new Promise<void>((resolve) => (finish = resolve));
+    const { user, onSubmit } = setup(vi.fn<Submit>().mockReturnValue(pending));
+    await fill(user, { amount: '10', description: 'Lunch' });
+    const button = screen.getByRole('button', { name: 'Submit' });
+    const form = button.closest('form')!;
+
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+
+    finish();
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(button).toHaveAttribute('aria-busy', 'false');
   });
 });

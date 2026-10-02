@@ -1,5 +1,5 @@
 import { loginInputSchema } from 'api/schemas';
-import { useState, type SubmitEvent } from 'react';
+import { useRef, useState, type SubmitEvent } from 'react';
 import { content } from '../content/content';
 import { getErrorMessage } from '../api/trpcClient';
 import { ErrorAlert } from './ErrorAlert';
@@ -11,20 +11,25 @@ type Props = {
 export default function LoginForm({ onLogin }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // State alone can't block a second submit that fires before the next render
+  const submitInFlightRef = useRef(false);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (submitInFlightRef.current) return;
     const parsed = loginInputSchema.safeParse(Object.fromEntries(new FormData(event.currentTarget)));
     if (!parsed.success) {
       setError(content.login.required);
       return;
     }
+    submitInFlightRef.current = true;
     setIsSubmitting(true);
     setError(null);
     try {
       await onLogin(parsed.data.username, parsed.data.password);
     } catch (loginError) {
       setError(getErrorMessage(loginError));
+      submitInFlightRef.current = false;
       setIsSubmitting(false);
     }
   }

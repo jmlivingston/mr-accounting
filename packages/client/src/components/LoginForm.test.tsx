@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { content } from '../content/content';
@@ -64,5 +64,13 @@ describe('LoginForm', () => {
     expect(screen.getByRole('button', { name: 'Log in' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Log in' })).toHaveAttribute('aria-busy', 'true');
     finish();
+  });
+
+  it('ignores a repeated submit while the login is in flight', async () => {
+    const onLogin = vi.fn().mockReturnValue(new Promise<void>(() => undefined));
+    const { user } = setup(onLogin);
+    await fillAndSubmit(user, 'alice', 'secret');
+    fireEvent.submit(screen.getByRole('button', { name: 'Log in' }).closest('form')!);
+    expect(onLogin).toHaveBeenCalledTimes(1);
   });
 });
