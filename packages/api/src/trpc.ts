@@ -16,7 +16,8 @@ type Context = Awaited<ReturnType<typeof createContext>>;
 const t = initTRPC.context<Context>().create({
   isDev: false,
   errorFormatter({ shape, error }) {
-    if (error.cause instanceof $ZodError) {
+    // Only input validation failures are safe to show; other Zod errors come from stored data
+    if (error.code === 'BAD_REQUEST' && error.cause instanceof $ZodError) {
       const message = error.cause.issues.map(({ path, message }) => `${path.join('.')}: ${message}`).join('; ');
       return { ...shape, message };
     }
