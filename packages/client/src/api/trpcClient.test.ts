@@ -3,7 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { csrfHeader } from '../constants';
 import { content } from '../content/content';
 import { trpcError } from '../test/trpcErrors';
-import { getErrorMessage, isUnauthorized, setCsrfToken, trpc } from './trpcClient';
+import { sessionStore } from '../session/sessionStore';
+import { getErrorMessage, trpc } from './trpcClient';
 
 function batchResponse(...data: unknown[]) {
   return new Response(JSON.stringify(data.map((item) => ({ result: { data: item } }))), {
@@ -12,7 +13,6 @@ function batchResponse(...data: unknown[]) {
 }
 
 afterEach(() => {
-  setCsrfToken(null);
   vi.unstubAllGlobals();
 });
 
@@ -53,15 +53,6 @@ describe('getErrorMessage', () => {
   );
 });
 
-describe('isUnauthorized', () => {
-  it('is true only for tRPC UNAUTHORIZED errors', () => {
-    expect(isUnauthorized(trpcError('UNAUTHORIZED'))).toBe(true);
-    expect(isUnauthorized(trpcError('FORBIDDEN'))).toBe(false);
-    expect(isUnauthorized(new Error('UNAUTHORIZED'))).toBe(false);
-    expect(isUnauthorized(undefined)).toBe(false);
-  });
-});
-
 describe('trpc client', () => {
   it('sends credentials and no CSRF header before a token is set', async () => {
     const fetchMock = vi.fn().mockResolvedValue(batchResponse({ csrfToken: 'abc' }));
@@ -76,12 +67,12 @@ describe('trpc client', () => {
   it('sends the CSRF token once it is set, and stops after it is cleared', async () => {
     const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(batchResponse({ csrfToken: 'abc' })));
     vi.stubGlobal('fetch', fetchMock);
-    setCsrfToken('token-123');
+    sessionStore.begin('token-123');
     await trpc.auth.session.query();
     expect(new Headers((fetchMock.mock.calls[0] as [string, RequestInit])[1].headers).get(csrfHeader)).toBe(
       'token-123',
     );
-    setCsrfToken(null);
+    sessionStore.end();
     await trpc.auth.session.query();
     expect(new Headers((fetchMock.mock.calls[1] as [string, RequestInit])[1].headers).has(csrfHeader)).toBe(false);
   });

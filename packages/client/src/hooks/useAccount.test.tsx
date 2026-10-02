@@ -35,8 +35,6 @@ const input: TransactionInput = {
   description: 'Salary',
 };
 
-const onSessionExpired = vi.fn();
-
 function unauthorized() {
   return trpcError('UNAUTHORIZED');
 }
@@ -48,7 +46,7 @@ beforeEach(() => {
 
 describe('useAccount', () => {
   it('starts empty then loads the balance and recent transactions', async () => {
-    const { result } = renderHook(() => useAccount(onSessionExpired));
+    const { result } = renderHook(() => useAccount());
     expect(result.current.balance).toBeNull();
     expect(result.current.transactions).toEqual([]);
     await waitFor(() => expect(result.current.balance).toBe(50));
@@ -56,48 +54,29 @@ describe('useAccount', () => {
     expect(result.current.loadError).toBeNull();
   });
 
-  it('does not reload when the caller passes a new callback on every render', async () => {
-    const { result, rerender } = renderHook(() => useAccount(() => undefined));
+  it('does not reload on re-render', async () => {
+    const { result, rerender } = renderHook(() => useAccount());
     await waitFor(() => expect(result.current.balance).toBe(50));
     rerender();
     rerender();
     expect(mocks.account).toHaveBeenCalledTimes(1);
   });
 
-  it('calls the latest callback when the session expires', async () => {
-    mocks.create.mockRejectedValue(unauthorized());
-    const first = vi.fn();
-    const second = vi.fn();
-    const { result, rerender } = renderHook(({ callback }) => useAccount(callback), {
-      initialProps: { callback: first },
-    });
-    await waitFor(() => expect(result.current.balance).toBe(50));
-    rerender({ callback: second });
-
-    await act(async () => {
-      await expect(result.current.addTransaction(input)).rejects.toThrow();
-    });
-
-    expect(second).toHaveBeenCalledTimes(1);
-    expect(first).not.toHaveBeenCalled();
-  });
-
-  it('reports a load error without expiring the session', async () => {
+  it('reports a load error', async () => {
     mocks.account.mockRejectedValue(trpcError('INTERNAL_SERVER_ERROR'));
-    const { result } = renderHook(() => useAccount(onSessionExpired));
+    const { result } = renderHook(() => useAccount());
     await waitFor(() => expect(result.current.loadError).toBe(content.errors.internal));
-    expect(onSessionExpired).not.toHaveBeenCalled();
   });
 
-  it('expires the session when loading is unauthorized', async () => {
+  it('reports an unauthorized load error', async () => {
     mocks.account.mockRejectedValue(unauthorized());
-    renderHook(() => useAccount(onSessionExpired));
-    await waitFor(() => expect(onSessionExpired).toHaveBeenCalledTimes(1));
+    const { result } = renderHook(() => useAccount());
+    await waitFor(() => expect(result.current.loadError).toBe(content.errors.unauthorized));
   });
 
   it('creates a transaction then refreshes the account', async () => {
     mocks.create.mockResolvedValue(transaction);
-    const { result } = renderHook(() => useAccount(onSessionExpired));
+    const { result } = renderHook(() => useAccount());
     await waitFor(() => expect(result.current.balance).toBe(50));
     mocks.account.mockResolvedValue({ balance: 100, transactions: [transaction] });
 
@@ -110,7 +89,7 @@ describe('useAccount', () => {
   it('clears an earlier load error after a successful refresh', async () => {
     mocks.account.mockRejectedValueOnce(trpcError('INTERNAL_SERVER_ERROR'));
     mocks.create.mockResolvedValue(transaction);
-    const { result } = renderHook(() => useAccount(onSessionExpired));
+    const { result } = renderHook(() => useAccount());
     await waitFor(() => expect(result.current.loadError).toBe(content.errors.internal));
 
     await act(() => result.current.addTransaction(input));
@@ -121,7 +100,7 @@ describe('useAccount', () => {
 
   it('throws the server message when creating fails and does not refresh', async () => {
     mocks.create.mockRejectedValue(trpcError('BAD_REQUEST', 'insufficientFunds'));
-    const { result } = renderHook(() => useAccount(onSessionExpired));
+    const { result } = renderHook(() => useAccount());
     await waitFor(() => expect(result.current.balance).toBe(50));
     mocks.account.mockClear();
 
@@ -131,14 +110,13 @@ describe('useAccount', () => {
     expect(mocks.account).not.toHaveBeenCalled();
   });
 
-  it('expires the session when creating is unauthorized', async () => {
+  it('reports an unauthorized error when creating', async () => {
     mocks.create.mockRejectedValue(unauthorized());
-    const { result } = renderHook(() => useAccount(onSessionExpired));
+    const { result } = renderHook(() => useAccount());
     await waitFor(() => expect(result.current.balance).toBe(50));
 
     await act(async () => {
       await expect(result.current.addTransaction(input)).rejects.toThrow(content.errors.unauthorized);
     });
-    expect(onSessionExpired).toHaveBeenCalledTimes(1);
   });
 });

@@ -4,12 +4,8 @@ import { ErrorAlert } from './ErrorAlert';
 import { TransactionForm } from './TransactionForm';
 import { TransactionList } from './TransactionList';
 
-type Props = {
-  onSessionExpired: () => void;
-};
-
-export default function Dashboard({ onSessionExpired }: Props) {
-  const { balance, transactions, loadError, addTransaction } = useAccount(onSessionExpired);
+export default function Dashboard() {
+  const { balance, transactions, loadError, addTransaction } = useAccount();
 
   return (
     <>

@@ -1,20 +1,35 @@
-import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, TRPCClientError, type TRPCLink } from '@trpc/client';
+import { observable } from '@trpc/server/observable';
 import type { AppRouter } from 'api';
-import { content } from '../content/content';
 import { apiUrl, csrfHeader } from '../constants';
+import { content } from '../content/content';
+import { sessionStore } from '../session/sessionStore';
 
-let csrfToken: string | null = null;
-
-export function setCsrfToken(token: string | null) {
-  csrfToken = token;
-}
+// A 401 from login means wrong credentials, not an expired session
+const endSessionWhenUnauthorized: TRPCLink<AppRouter> = () => {
+  return ({ op, next }) =>
+    observable((observer) =>
+      next(op).subscribe({
+        next: (value) => observer.next(value),
+        error(error) {
+          if (op.path !== 'auth.login' && error.data?.code === 'UNAUTHORIZED') sessionStore.end();
+          observer.error(error);
+        },
+        complete: () => observer.complete(),
+      }),
+    );
+};
 
 export const trpc = createTRPCClient<AppRouter>({
   links: [
+    endSessionWhenUnauthorized,
     httpBatchLink({
       url: `${apiUrl}/trpc`,
       fetch: (input, init) => fetch(input, { ...init, credentials: 'include' }),
-      headers: () => (csrfToken ? { [csrfHeader]: csrfToken } : {}),
+      headers: () => {
+        const csrfToken = sessionStore.getCsrfToken();
+        return csrfToken ? { [csrfHeader]: csrfToken } : {};
+      },
     }),
   ],
 });
@@ -35,8 +50,4 @@ export function getErrorMessage(error: unknown) {
     default:
       return content.errors.unknown;
   }
-}
-
-export function isUnauthorized(error: unknown) {
-  return error instanceof TRPCClientError && (error as TRPCClientError<AppRouter>).data?.code === 'UNAUTHORIZED';
 }

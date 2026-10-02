@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { content } from './content/content';
-import { useAuth } from './hooks/useAuth';
+import { login, logout, useSession } from './session/session';
 
 const LoginForm = lazy(() => import('./components/LoginForm'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -10,7 +10,7 @@ function Loading() {
 }
 
 export default function App() {
-  const { status, login, logout, expireSession } = useAuth();
+  const status = useSession();
 
   return (
     <main className="container">
@@ -33,7 +33,7 @@ export default function App() {
       {status === 'loading' && <Loading />}
       <Suspense fallback={<Loading />}>
         {status === 'unauthenticated' && <LoginForm onLogin={login} />}
-        {status === 'authenticated' && <Dashboard onSessionExpired={expireSession} />}
+        {status === 'authenticated' && <Dashboard />}
       </Suspense>
     </main>
   );

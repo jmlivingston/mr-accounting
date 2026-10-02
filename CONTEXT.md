@@ -31,3 +31,7 @@ _Avoid_: Account (the Account is the user's view; the snapshot is the read)
 **Insufficient funds**:
 The rejection of a Transaction that would make the Balance negative.
 _Avoid_: Overdraft
+
+**Session**:
+The period during which the user is logged in. It ends on logout or when the server stops accepting it.
+_Avoid_: Login, auth state, token

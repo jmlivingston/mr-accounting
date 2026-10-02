@@ -1,8 +1,10 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { content } from './content/content';
+import { restoreSession } from './session/session';
+import { sessionStore } from './session/sessionStore';
 import { trpcError } from './test/trpcErrors';
 
 const mocks = vi.hoisted(() => ({
@@ -15,7 +17,6 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('./api/trpcClient', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./api/trpcClient')>()),
-  setCsrfToken: vi.fn(),
   trpc: {
     auth: {
       session: { query: mocks.session },
@@ -45,23 +46,28 @@ beforeEach(() => {
   });
 });
 
+function renderApp() {
+  void restoreSession();
+  return render(<App />);
+}
+
 describe('App', () => {
   it('shows a loading indicator while checking the session', () => {
     mocks.session.mockReturnValue(new Promise(() => undefined));
-    render(<App />);
+    renderApp();
     expect(screen.getByText('Loading')).toHaveAttribute('aria-busy', 'true');
   });
 
   it('shows the login form when there is no session', async () => {
     mocks.session.mockResolvedValue({ csrfToken: null });
-    render(<App />);
+    renderApp();
     expect(await screen.findByRole('heading', { name: 'Log in' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument();
   });
 
   it('shows the dashboard with account data for an existing session', async () => {
     mocks.session.mockResolvedValue({ csrfToken: 'csrf' });
-    render(<App />);
+    renderApp();
     expect(await screen.findByRole('heading', { name: '$1,500.00' })).toBeInTheDocument();
     expect(screen.getByText('Salary')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'New transaction' })).toBeInTheDocument();
@@ -72,7 +78,7 @@ describe('App', () => {
     mocks.session.mockResolvedValue({ csrfToken: null });
     mocks.login.mockResolvedValue({ username: 'alice', csrfToken: 'csrf' });
     const user = userEvent.setup();
-    render(<App />);
+    renderApp();
 
     await user.type(await screen.findByLabelText('Username'), 'alice');
     await user.type(screen.getByLabelText('Password'), 'secret');
@@ -86,7 +92,7 @@ describe('App', () => {
     mocks.session.mockResolvedValue({ csrfToken: 'csrf' });
     mocks.logout.mockResolvedValue({ success: true });
     const user = userEvent.setup();
-    render(<App />);
+    renderApp();
 
     await user.click(await screen.findByRole('button', { name: 'Log out' }));
 
@@ -94,17 +100,20 @@ describe('App', () => {
     expect(mocks.logout).toHaveBeenCalled();
   });
 
-  it('returns to the login form when the session expires mid-use', async () => {
+  it('returns to the login form when the session ends mid-use', async () => {
     mocks.session.mockResolvedValue({ csrfToken: 'csrf' });
-    mocks.account.mockRejectedValue(trpcError('UNAUTHORIZED'));
-    render(<App />);
+    renderApp();
+    expect(await screen.findByRole('heading', { name: '$1,500.00' })).toBeInTheDocument();
+
+    act(() => sessionStore.end());
+
     expect(await screen.findByRole('heading', { name: 'Log in' })).toBeInTheDocument();
   });
 
   it('shows load errors on the dashboard', async () => {
     mocks.session.mockResolvedValue({ csrfToken: 'csrf' });
     mocks.account.mockRejectedValue(trpcError('INTERNAL_SERVER_ERROR'));
-    render(<App />);
+    renderApp();
     expect(await screen.findByRole('alert')).toHaveTextContent(content.errors.internal);
   });
 });
