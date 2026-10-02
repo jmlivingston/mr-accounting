@@ -1,8 +1,9 @@
-import { z } from 'zod';
+import './locale';
+import { z } from 'zod/mini';
 
 export const loginInputSchema = z.object({
-  username: z.string().min(1).max(100),
-  password: z.string().min(1).max(200),
+  username: z.string().check(z.minLength(1), z.maxLength(100)),
+  password: z.string().check(z.minLength(1), z.maxLength(200)),
 });
 
 export const userRecordSchema = z.object({

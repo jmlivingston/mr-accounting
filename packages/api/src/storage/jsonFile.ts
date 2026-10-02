@@ -1,13 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { ZodType } from 'zod';
+import { parse, type $ZodType, type output } from 'zod/v4/core';
 import { config } from '../config';
 
-export async function readJsonFile<T>(fileName: string, schema: ZodType<T>, fallback: T): Promise<T> {
+export async function readJsonFile<S extends $ZodType>(
+  fileName: string,
+  schema: S,
+  fallback: output<S>,
+): Promise<output<S>> {
   try {
     const content = await readFile(path.join(config.dataDir, fileName), 'utf8');
-    return schema.parse(JSON.parse(content));
+    return parse(schema, JSON.parse(content));
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return fallback;
     throw error;

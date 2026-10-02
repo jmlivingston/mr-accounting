@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
-import { ZodError } from 'zod';
+import { $ZodError } from 'zod/v4/core';
 import { session } from './config';
 import { verifyAccessToken } from './services/authService';
 
@@ -16,7 +16,7 @@ type Context = Awaited<ReturnType<typeof createContext>>;
 const t = initTRPC.context<Context>().create({
   isDev: false,
   errorFormatter({ shape, error }) {
-    if (error.cause instanceof ZodError) {
+    if (error.cause instanceof $ZodError) {
       const message = error.cause.issues.map(({ path, message }) => `${path.join('.')}: ${message}`).join('; ');
       return { ...shape, message };
     }

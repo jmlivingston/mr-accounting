@@ -1,8 +1,8 @@
-import { transactionInputSchema, transactionTypes } from 'api/schemas';
+import { transactionInputSchema, transactionTypes, type TransactionInput } from 'api/schemas';
 import { useState, type SubmitEvent } from 'react';
 
 type Props = {
-  onSubmit: (input: typeof transactionInputSchema._output) => Promise<void>;
+  onSubmit: (input: TransactionInput) => Promise<void>;
 };
 
 function toLocalDateTimeValue(date: Date) {
