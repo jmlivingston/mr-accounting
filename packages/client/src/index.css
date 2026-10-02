@@ -1,0 +1,7 @@
+.error-alert {
+  padding: var(--pico-form-element-spacing-vertical) var(--pico-form-element-spacing-horizontal);
+  border: var(--pico-border-width) solid var(--pico-form-element-invalid-border-color);
+  border-radius: var(--pico-border-radius);
+  color: var(--pico-del-color);
+  font-weight: 600;
+}

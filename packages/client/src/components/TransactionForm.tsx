@@ -1,5 +1,6 @@
 import { transactionInputSchema, transactionTypes, type TransactionInput } from 'api/schemas';
 import { useState, type SubmitEvent } from 'react';
+import { ErrorAlert } from './ErrorAlert';
 
 type Props = {
   onSubmit: (input: TransactionInput) => Promise<void>;
@@ -12,8 +13,18 @@ function toLocalDateTimeValue(date: Date) {
 
 export function TransactionForm({ onSubmit }: Props) {
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [defaultDate, setDefaultDate] = useState(() => toLocalDateTimeValue(new Date()));
+
+  function invalidProps(field: string) {
+    return fieldErrors[field] ? { 'aria-invalid': true, 'aria-describedby': `${field}-error` } : {};
+  }
+
+  function fieldError(field: string) {
+    const message = fieldErrors[field];
+    return message && <small id={`${field}-error`}>{message}</small>;
+  }
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,11 +38,15 @@ export function TransactionForm({ onSubmit }: Props) {
       amount: Number(values.amount),
     });
     if (!parsed.success) {
-      setError(parsed.error.issues.map(({ path, message }) => `${path.join('.')}: ${message}`).join('; '));
+      const errors: Record<string, string> = {};
+      for (const { path, message } of parsed.error.issues) errors[String(path[0])] ??= message;
+      setFieldErrors(errors);
+      setError(null);
       return;
     }
     setIsSubmitting(true);
     setError(null);
+    setFieldErrors({});
     try {
       await onSubmit(parsed.data);
       form.reset();
@@ -51,27 +66,39 @@ export function TransactionForm({ onSubmit }: Props) {
       <form onSubmit={(event) => void handleSubmit(event)} key={defaultDate}>
         <label>
           Date and time
-          <input name="date" type="datetime-local" defaultValue={defaultDate} required />
+          <input name="date" type="datetime-local" defaultValue={defaultDate} required {...invalidProps('date')} />
+          {fieldError('date')}
         </label>
         <label>
           Amount
-          <input name="amount" type="number" min="0.01" step="any" inputMode="decimal" required />
+          <input
+            name="amount"
+            type="number"
+            min="0.01"
+            step="any"
+            inputMode="decimal"
+            required
+            {...invalidProps('amount')}
+          />
+          {fieldError('amount')}
         </label>
         <label>
           Type
-          <select name="type" defaultValue={transactionTypes[0]} required>
+          <select name="type" defaultValue={transactionTypes[0]} required {...invalidProps('type')}>
             {transactionTypes.map((type) => (
               <option key={type} value={type}>
                 {type}
               </option>
             ))}
           </select>
+          {fieldError('type')}
         </label>
         <label>
           Description
-          <input name="description" maxLength={200} required />
+          <input name="description" maxLength={200} required {...invalidProps('description')} />
+          {fieldError('description')}
         </label>
-        {error && <p role="alert">{error}</p>}
+        {error && <ErrorAlert>{error}</ErrorAlert>}
         <button type="submit" aria-busy={isSubmitting} disabled={isSubmitting}>
           Submit
         </button>

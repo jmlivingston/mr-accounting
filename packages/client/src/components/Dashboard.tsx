@@ -1,5 +1,6 @@
 import { useAccount } from '../hooks/useAccount';
 import { Balance } from './Balance';
+import { ErrorAlert } from './ErrorAlert';
 import { TransactionForm } from './TransactionForm';
 import { TransactionList } from './TransactionList';
 
@@ -12,7 +13,7 @@ export function Dashboard({ onSessionExpired }: Props) {
 
   return (
     <>
-      {loadError && <p role="alert">{loadError}</p>}
+      {loadError && <ErrorAlert>{loadError}</ErrorAlert>}
       <Balance balance={balance} />
       <TransactionForm onSubmit={addTransaction} />
       <TransactionList transactions={transactions} />
