@@ -13,3 +13,12 @@
   margin-bottom: var(--pico-spacing);
   color: var(--pico-del-color);
 }
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin-bottom: var(--pico-spacing);
+  border-bottom: var(--pico-border-width) solid var(--pico-muted-border-color);
+  background-color: var(--pico-background-color);
+}

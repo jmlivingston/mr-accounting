@@ -81,7 +81,12 @@ async function login(userScopes: string[] = [scopes.transactionsRead, scopes.tra
   return created;
 }
 
-const transaction = { date: '2026-03-01T12:00:00Z', amount: 100, type: 'credit', description: 'Salary' };
+const transaction = {
+  date: new Date(Date.now() - 86_400_000).toISOString(),
+  amount: 100,
+  type: 'credit',
+  description: 'Salary',
+};
 
 describe('auth.login', () => {
   it('sets a hardened session cookie and returns a CSRF token', async () => {
@@ -218,6 +223,33 @@ describe('transactions', () => {
     expect(response.status).toBe(400);
     expect(body.error?.message).toBe(`amount: Too big: expected number to be <=${maxTransactionAmount}`);
     expect(body.error?.data.reason).toBe('validation');
+  });
+
+  it('rejects a transaction dated in the future', async () => {
+    const { cookie, csrf } = await login();
+    const date = new Date(Date.now() + 86_400_000).toISOString();
+    const { response, body } = await call('transactions.create', {
+      method: 'POST',
+      input: { ...transaction, date },
+      cookie,
+      csrf,
+    });
+    expect(response.status).toBe(400);
+    expect(body.error?.message).toBe('date: Date cannot be in the future');
+    expect(body.error?.data.reason).toBe('validation');
+  });
+
+  it('rejects a transaction dated more than a year ago', async () => {
+    const { cookie, csrf } = await login();
+    const date = new Date(Date.now() - 400 * 86_400_000).toISOString();
+    const { response, body } = await call('transactions.create', {
+      method: 'POST',
+      input: { ...transaction, date },
+      cookie,
+      csrf,
+    });
+    expect(response.status).toBe(400);
+    expect(body.error?.message).toBe('date: Date cannot be more than 1 year ago');
   });
 
   it('rejects a debit that overdraws the account', async () => {

@@ -50,7 +50,9 @@
   "validation": {
     "fallback": "This value is not valid",
     "date": {
-      "invalid": "Enter a valid date and time"
+      "invalid": "Enter a valid date and time",
+      "future": "Date and time cannot be in the future",
+      "tooOld": "Date and time cannot be more than a year ago"
     },
     "amount": {
       "invalid": "Enter a valid amount",

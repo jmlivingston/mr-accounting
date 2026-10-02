@@ -1,13 +1,15 @@
-import { maxDescriptionLength, maxTransactionAmount, minTransactionAmount } from 'api/schemas';
+import { dateRuleReasons, maxDescriptionLength, maxTransactionAmount, minTransactionAmount } from 'api/schemas';
 import { content, format } from './content/content';
 import { currencyFormatter } from './constants';
 
-type Issue = { path: PropertyKey[]; code: string };
+type Issue = { path: PropertyKey[]; code: string; params?: Record<string, unknown> };
 
-export function getIssueMessage({ path, code }: Issue) {
+export function getIssueMessage({ path, code, params }: Issue) {
   const messages = content.validation;
   switch (path[0]) {
     case 'date':
+      if (params?.reason === dateRuleReasons.future) return messages.date.future;
+      if (params?.reason === dateRuleReasons.tooOld) return messages.date.tooOld;
       return messages.date.invalid;
     case 'amount':
       if (code === 'too_small') {

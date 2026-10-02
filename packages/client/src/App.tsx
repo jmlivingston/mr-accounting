@@ -14,28 +14,32 @@ export default function App() {
   const status = useSession();
 
   return (
-    <main className="container">
-      <nav>
-        <ul>
-          <li>
-            <strong>{content.app.title}</strong>
-          </li>
-        </ul>
-        {status === sessionStatuses.authenticated && (
+    <>
+      <header className="container app-header">
+        <nav>
           <ul>
             <li>
-              <button className="secondary" onClick={() => void logout()}>
-                {content.app.logout}
-              </button>
+              <strong>{content.app.title}</strong>
             </li>
           </ul>
-        )}
-      </nav>
-      {status === sessionStatuses.loading && <Loading />}
-      <Suspense fallback={<Loading />}>
-        {status === sessionStatuses.unauthenticated && <LoginForm onLogin={login} />}
-        {status === sessionStatuses.authenticated && <Dashboard />}
-      </Suspense>
-    </main>
+          {status === sessionStatuses.authenticated && (
+            <ul>
+              <li>
+                <button className="secondary" onClick={() => void logout()}>
+                  {content.app.logout}
+                </button>
+              </li>
+            </ul>
+          )}
+        </nav>
+      </header>
+      <main className="container">
+        {status === sessionStatuses.loading && <Loading />}
+        <Suspense fallback={<Loading />}>
+          {status === sessionStatuses.unauthenticated && <LoginForm onLogin={login} />}
+          {status === sessionStatuses.authenticated && <Dashboard />}
+        </Suspense>
+      </main>
+    </>
   );
 }

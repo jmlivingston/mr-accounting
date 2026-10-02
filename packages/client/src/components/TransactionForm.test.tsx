@@ -136,4 +136,17 @@ describe('TransactionForm', () => {
     await waitFor(() => expect(button).toBeEnabled());
     expect(button).toHaveAttribute('aria-busy', 'false');
   });
+
+  it.each([
+    ['in the future', '2099-01-01T00:00', content.validation.date.future],
+    ['more than a year ago', '2000-01-01T00:00', content.validation.date.tooOld],
+  ])('rejects a date %s without submitting', async (_name, date, message) => {
+    const { user, onSubmit } = setup();
+    fireEvent.change(field('Date and time'), { target: { value: date } });
+    await fill(user, { amount: '10', description: 'Dated' });
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(field('Date and time')).toHaveAttribute('aria-invalid', 'true');
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
 });
