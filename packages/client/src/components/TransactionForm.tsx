@@ -1,4 +1,4 @@
-import { transactionInputSchema, transactionTypes, type TransactionInput } from 'api/schemas';
+import { maxTransactionAmount, transactionInputSchema, transactionTypes, type TransactionInput } from 'api/schemas';
 import { useState, type SubmitEvent } from 'react';
 import { ErrorAlert } from './ErrorAlert';
 
@@ -75,6 +75,7 @@ export function TransactionForm({ onSubmit }: Props) {
             name="amount"
             type="number"
             min="0.01"
+            max={maxTransactionAmount}
             step="any"
             inputMode="decimal"
             required

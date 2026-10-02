@@ -1,11 +1,13 @@
 import './locale';
 import { z } from 'zod/mini';
 
+export const maxTransactionAmount = 1_000_000;
+
 export const transactionTypes = ['debit', 'credit'] as const;
 
 export const transactionInputSchema = z.object({
   date: z.iso.datetime({ offset: true }),
-  amount: z.number().check(z.positive(), z.maximum(1_000_000_000_000)),
+  amount: z.number().check(z.positive(), z.maximum(maxTransactionAmount)),
   type: z.enum(transactionTypes),
   description: z.string().check(z.trim(), z.minLength(1), z.maxLength(200)),
 });
