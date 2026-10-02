@@ -1,12 +1,12 @@
 import {
   randomBytes,
   scrypt,
-  ScryptOptions,
   timingSafeEqual,
+  type ScryptOptions,
 } from 'node:crypto'
 import { jwtVerify, SignJWT } from 'jose'
 import { config, files, session } from '../config'
-import { authFileSchema, UserRecord } from '../schemas/auth'
+import { authFileSchema, type UserRecord } from '../schemas/auth'
 import { readJsonFile } from '../storage/jsonFile'
 
 const keyLength = 64

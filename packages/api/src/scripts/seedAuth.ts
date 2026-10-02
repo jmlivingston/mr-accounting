@@ -8,5 +8,5 @@ const testUser = {
   scopes: [scopes.transactionsRead, scopes.transactionsWrite],
 }
 
-const credentials = await hashPassword('Ch4*Nip!RLNg')
+const credentials = await hashPassword('Ch4Nip!RLNg')
 await writeJsonFile(files.auth, { users: [{ ...testUser, ...credentials }] })

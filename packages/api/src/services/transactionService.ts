@@ -2,9 +2,9 @@ import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 import { files, limits } from '../config'
 import {
-  Transaction,
-  TransactionInput,
   transactionSchema,
+  type Transaction,
+  type TransactionInput,
 } from '../schemas/transaction'
 import { readJsonFile, writeJsonFile } from '../storage/jsonFile'
 

@@ -4,5 +4,5 @@ coverage
 .env
 *.log
 .DS_Store
-api/data/transactions.json
-api/certs
+packages/api/data/transactions.json
+packages/api/certs

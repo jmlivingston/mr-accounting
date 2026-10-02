@@ -29,7 +29,7 @@ Keep this minimal as possible with well named functions and variables and no com
 
 ## Security
 
-- authentication and authorization - Minimal OAuth implementation using a JSON file (auth.json). Create one user called "testuser" with password "Ch4\*Nip!RLNg". This user will have access only to transaction REST API with only the HTTP methods required for them.
+- authentication and authorization - Minimal OAuth implementation using a JSON file (auth.json). Create one user called "testuser" with password "Ch4Nip!RLNg". This user will have access only to transaction REST API with only the HTTP methods required for them.
 - REST API - All endpoints should be secure using CORS, CSRF, and any other standards. All other routes and unused HTTP methods should be locked down.
 - Client - Cannot access REST API without being logged in. Ensure all other security concerns like HTTPS, cookie security, XSS, and CSP if necessary are in place.
 
