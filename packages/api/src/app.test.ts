@@ -164,11 +164,9 @@ describe('auth.session and auth.logout', () => {
 describe('transactions', () => {
   it('requires authentication to read', async () => {
     expect((await call('transactions.account')).response.status).toBe(401);
-    expect((await call('transactions.balance')).response.status).toBe(401);
-    expect((await call('transactions.recent')).response.status).toBe(401);
   });
 
-  it('creates a transaction and reflects it in balance and recent', async () => {
+  it('creates a transaction and reflects it in the account', async () => {
     const { cookie, csrf } = await login();
     const created = await call('transactions.create', { method: 'POST', input: transaction, cookie, csrf });
     expect(created.response.status).toBe(200);
@@ -176,10 +174,6 @@ describe('transactions', () => {
 
     const account = await call('transactions.account', { cookie });
     expect(account.body.result?.data).toMatchObject({ balance: 100, transactions: [transaction] });
-    const balance = await call('transactions.balance', { cookie });
-    expect(balance.body.result?.data).toEqual({ balance: 100 });
-    const recent = await call('transactions.recent', { cookie });
-    expect(recent.body.result?.data).toHaveLength(1);
   });
 
   it('rejects creation without a CSRF token', async () => {
@@ -205,12 +199,12 @@ describe('transactions', () => {
     expect(response.status).toBe(403);
     expect(body.error?.data.code).toBe('FORBIDDEN');
     expect(body.error?.data.reason).toBeUndefined();
-    expect((await call('transactions.balance', { cookie })).response.status).toBe(200);
+    expect((await call('transactions.account', { cookie })).response.status).toBe(200);
   });
 
   it('requires the read scope to read', async () => {
     const { cookie } = await login([scopes.transactionsWrite]);
-    expect((await call('transactions.balance', { cookie })).response.status).toBe(403);
+    expect((await call('transactions.account', { cookie })).response.status).toBe(403);
   });
 
   it('reports field-level validation errors', async () => {

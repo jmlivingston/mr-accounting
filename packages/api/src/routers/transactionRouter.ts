@@ -8,8 +8,6 @@ const writeProcedure = scopedProcedure(scopes.transactionsWrite);
 
 export const transactionRouter = router({
   account: readProcedure.query(({ ctx }) => ctx.ledger.snapshot()),
-  balance: readProcedure.query(async ({ ctx }) => ({ balance: (await ctx.ledger.snapshot()).balance })),
-  recent: readProcedure.query(async ({ ctx }) => (await ctx.ledger.snapshot()).transactions),
   create: writeProcedure.input(transactionInputSchema).mutation(async ({ input, ctx }) => {
     const result = await ctx.ledger.post(input);
     if (!result.ok) {
