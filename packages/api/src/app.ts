@@ -1,6 +1,8 @@
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import express from 'express';
 import { limits } from './config';
+import { createJsonFileLedgerAdapter } from './ledger/jsonFileAdapter';
+import { createLedger, type Ledger } from './ledger/ledger';
 import { logger } from './logger';
 import {
   apiRateLimit,
@@ -16,7 +18,7 @@ import {
 import { appRouter } from './router';
 import { createContext } from './trpc';
 
-export function createApp() {
+export function createApp({ ledger = createLedger(createJsonFileLedgerAdapter()) }: { ledger?: Ledger } = {}) {
   const app = express();
   app.disable('x-powered-by');
   app.use(securityHeaders);
@@ -31,7 +33,7 @@ export function createApp() {
     '/trpc',
     createExpressMiddleware({
       router: appRouter,
-      createContext,
+      createContext: createContext(ledger),
       onError: ({ error, path }) => {
         if (error.code === 'INTERNAL_SERVER_ERROR') {
           logger.error(`tRPC error on ${path}:`, error);

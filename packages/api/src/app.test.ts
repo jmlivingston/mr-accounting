@@ -3,6 +3,8 @@ import type { Server } from 'node:http';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from './app';
 import { config, files, scopes, session } from './config';
+import { createLedger } from './ledger/ledger';
+import { createMemoryLedgerAdapter } from './ledger/memoryAdapter';
 import { logger } from './logger';
 import { maxTransactionAmount } from './schemas/transaction';
 import { hashPassword } from './services/authService';
@@ -12,11 +14,13 @@ import { useTempDataDir } from './test/tempDataDir';
 const password = 'Sup3r-secret';
 const credentials = { username: 'tester', password };
 
+const ledgerAdapter = createMemoryLedgerAdapter();
+
 let server: Server;
 let baseUrl: string;
 
 beforeAll(async () => {
-  server = createApp().listen(0);
+  server = createApp({ ledger: createLedger(ledgerAdapter) }).listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
   baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });
@@ -32,7 +36,10 @@ async function seedUser(userScopes: string[] = [scopes.transactionsRead, scopes.
   await writeJsonFile(files.auth, { users: [{ ...user, ...(await hashPassword(password)) }] });
 }
 
-beforeEach(() => seedUser());
+beforeEach(async () => {
+  await ledgerAdapter.save([]);
+  await seedUser();
+});
 
 type TrpcResult = {
   result?: { data: Record<string, unknown> };
@@ -156,6 +163,7 @@ describe('auth.session and auth.logout', () => {
 
 describe('transactions', () => {
   it('requires authentication to read', async () => {
+    expect((await call('transactions.account')).response.status).toBe(401);
     expect((await call('transactions.balance')).response.status).toBe(401);
     expect((await call('transactions.recent')).response.status).toBe(401);
   });
@@ -166,6 +174,8 @@ describe('transactions', () => {
     expect(created.response.status).toBe(200);
     expect(created.body.result?.data).toMatchObject(transaction);
 
+    const account = await call('transactions.account', { cookie });
+    expect(account.body.result?.data).toMatchObject({ balance: 100, transactions: [transaction] });
     const balance = await call('transactions.balance', { cookie });
     expect(balance.body.result?.data).toEqual({ balance: 100 });
     const recent = await call('transactions.recent', { cookie });
@@ -232,13 +242,14 @@ describe('transactions', () => {
   it('hides internal errors from the client but logs them', async () => {
     const logged = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
     const { cookie } = await login();
-    await writeJsonFile(files.transactions, { transactions: [{ not: 'valid' }] });
-    const { response, body } = await call('transactions.balance', { cookie });
+    const failingLoad = vi.spyOn(ledgerAdapter, 'load').mockRejectedValueOnce(new Error('disk failure'));
+    const { response, body } = await call('transactions.account', { cookie });
     expect(response.status).toBe(500);
     expect(body.error?.message).toBe('Internal server error');
     expect(body.error?.data.reason).toBeUndefined();
-    expect(logged).toHaveBeenCalledWith('tRPC error on transactions.balance:', expect.anything());
+    expect(logged).toHaveBeenCalledWith('tRPC error on transactions.account:', expect.anything());
     logged.mockRestore();
+    failingLoad.mockRestore();
   });
 });
 

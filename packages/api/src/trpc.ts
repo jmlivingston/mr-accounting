@@ -3,16 +3,19 @@ import type { CreateExpressContextOptions } from '@trpc/server/adapters/express'
 import { $ZodError } from 'zod/v4/core';
 import { session } from './config';
 import { ApiError, type ErrorReason } from './errors';
+import type { Ledger } from './ledger/ledger';
 import { verifyAccessToken } from './services/authService';
 
-export async function createContext({ req, res }: CreateExpressContextOptions) {
-  const token: unknown = req.cookies?.[session.cookieName];
-  const claims = typeof token === 'string' ? await verifyAccessToken(token) : null;
-  const csrfHeader = req.get(session.csrfHeader);
-  return { req, res, claims, csrfHeader };
+export function createContext(ledger: Ledger) {
+  return async ({ req, res }: CreateExpressContextOptions) => {
+    const token: unknown = req.cookies?.[session.cookieName];
+    const claims = typeof token === 'string' ? await verifyAccessToken(token) : null;
+    const csrfHeader = req.get(session.csrfHeader);
+    return { req, res, claims, csrfHeader, ledger };
+  };
 }
 
-type Context = Awaited<ReturnType<typeof createContext>>;
+type Context = Awaited<ReturnType<ReturnType<typeof createContext>>>;
 
 const t = initTRPC.context<Context>().create({
   isDev: false,
