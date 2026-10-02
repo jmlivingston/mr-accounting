@@ -1,0 +1,39 @@
+import { TRPCError } from '@trpc/server'
+import { config, session } from '../config'
+import { loginInputSchema } from '../schemas/auth'
+import { authenticate, createAccessToken } from '../services/authService'
+import { authenticatedProcedure, publicProcedure, router } from '../trpc'
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: config.isProduction,
+  sameSite: 'strict',
+  path: '/',
+} as const
+
+export const authRouter = router({
+  login: publicProcedure
+    .input(loginInputSchema)
+    .mutation(async ({ input, ctx }) => {
+      const user = await authenticate(input.username, input.password)
+      if (!user) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid username or password',
+        })
+      }
+      const { token, csrfToken } = await createAccessToken(user)
+      ctx.res.cookie(session.cookieName, token, {
+        ...cookieOptions,
+        maxAge: session.lifetimeSeconds * 1000,
+      })
+      return { username: user.username, csrfToken }
+    }),
+  logout: authenticatedProcedure.mutation(({ ctx }) => {
+    ctx.res.clearCookie(session.cookieName, cookieOptions)
+    return { success: true }
+  }),
+  session: authenticatedProcedure.query(({ ctx }) => ({
+    csrfToken: ctx.claims.csrfToken,
+  })),
+})
