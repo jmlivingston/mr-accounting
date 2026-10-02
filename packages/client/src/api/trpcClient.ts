@@ -1,7 +1,8 @@
 import { createTRPCClient, httpBatchLink, TRPCClientError, type TRPCLink } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
 import type { AppRouter } from 'api';
-import { apiUrl, csrfHeader } from '../constants';
+import { errorCodes } from 'api/constants';
+import { apiUrl, authLoginPath, csrfHeader } from '../constants';
 import { content } from '../content/content';
 import { sessionStore } from '../session/sessionStore';
 
@@ -12,7 +13,7 @@ const endSessionWhenUnauthorized: TRPCLink<AppRouter> = () => {
       next(op).subscribe({
         next: (value) => observer.next(value),
         error(error) {
-          if (op.path !== 'auth.login' && error.data?.code === 'UNAUTHORIZED') sessionStore.end();
+          if (op.path !== authLoginPath && error.data?.code === errorCodes.unauthorized) sessionStore.end();
           observer.error(error);
         },
         complete: () => observer.complete(),
@@ -41,11 +42,11 @@ export function getErrorMessage(error: unknown) {
   if (!data) return content.errors.network;
   if (data.reason) return content.errors[data.reason];
   switch (data.code) {
-    case 'UNAUTHORIZED':
+    case errorCodes.unauthorized:
       return content.errors.unauthorized;
-    case 'FORBIDDEN':
+    case errorCodes.forbidden:
       return content.errors.forbidden;
-    case 'INTERNAL_SERVER_ERROR':
+    case errorCodes.internalServerError:
       return content.errors.internal;
     default:
       return content.errors.unknown;

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { limits } from '../config';
+import { errorReasons } from '../constants';
 import type { Transaction, TransactionInput } from '../schemas/transaction';
 
 export type LedgerAdapter = {
@@ -12,7 +13,8 @@ export type AccountSnapshot = {
   transactions: Transaction[];
 };
 
-export type PostResult = { ok: true; transaction: Transaction } | { ok: false; reason: 'insufficientFunds' };
+export type PostResult =
+  { ok: true; transaction: Transaction } | { ok: false; reason: typeof errorReasons.insufficientFunds };
 
 export type Ledger = {
   snapshot(): Promise<AccountSnapshot>;
@@ -52,7 +54,7 @@ export function createLedger(adapter: LedgerAdapter): Ledger {
         const transactions = await adapter.load();
         const transaction: Transaction = { id: randomUUID(), ...input };
         const updated = [...transactions, transaction];
-        if (calculateBalance(updated) < 0) return { ok: false, reason: 'insufficientFunds' };
+        if (calculateBalance(updated) < 0) return { ok: false, reason: errorReasons.insufficientFunds };
         await adapter.save(updated);
         return { ok: true, transaction };
       });

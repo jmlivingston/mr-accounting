@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/router.ts",
+    "./constants": "./src/constants.ts",
     "./schemas": "./src/schemas/index.ts"
   },
   "scripts": {

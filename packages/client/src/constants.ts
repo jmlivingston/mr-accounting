@@ -2,6 +2,14 @@ export const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
 
 export const csrfHeader = 'x-csrf-token';
 
+export const sessionStatuses = {
+  loading: 'loading',
+  authenticated: 'authenticated',
+  unauthenticated: 'unauthenticated',
+} as const;
+
+export const authLoginPath = 'auth.login';
+
 export const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',

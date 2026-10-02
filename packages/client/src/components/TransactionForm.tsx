@@ -79,36 +79,44 @@ export function TransactionForm({ onSubmit }: Props) {
         <h2>{content.transactionForm.heading}</h2>
       </header>
       <form onSubmit={(event) => void handleSubmit(event)} key={defaultDate}>
-        <label>
-          {content.transactionForm.dateTime}
-          <input name="date" type="datetime-local" defaultValue={defaultDate} required {...invalidProps('date')} />
-        </label>
-        {fieldError('date')}
-        <label>
-          {content.transactionForm.amount}
-          <input
-            name="amount"
-            type="number"
-            min={minTransactionAmount}
-            max={maxTransactionAmount}
-            step="any"
-            inputMode="decimal"
-            required
-            {...invalidProps('amount')}
-          />
-        </label>
-        {fieldError('amount')}
-        <label>
-          {content.transactionForm.type}
-          <select name="type" defaultValue={transactionTypes[0]} required {...invalidProps('type')}>
-            {transactionTypes.map((type) => (
-              <option key={type} value={type}>
-                {content.transactionTypes[type]}
-              </option>
-            ))}
-          </select>
-        </label>
-        {fieldError('type')}
+        <div className="grid">
+          <div>
+            <label>
+              {content.transactionForm.dateTime}
+              <input name="date" type="datetime-local" defaultValue={defaultDate} required {...invalidProps('date')} />
+            </label>
+            {fieldError('date')}
+          </div>
+          <div>
+            <label>
+              {content.transactionForm.amount}
+              <input
+                name="amount"
+                type="number"
+                min={minTransactionAmount}
+                max={maxTransactionAmount}
+                step="any"
+                inputMode="decimal"
+                required
+                {...invalidProps('amount')}
+              />
+            </label>
+            {fieldError('amount')}
+          </div>
+          <div>
+            <label>
+              {content.transactionForm.type}
+              <select name="type" defaultValue={transactionTypes[0]} required {...invalidProps('type')}>
+                {transactionTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {content.transactionTypes[type]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {fieldError('type')}
+          </div>
+        </div>
         <label>
           {content.transactionForm.description}
           <input name="description" maxLength={maxDescriptionLength} required {...invalidProps('description')} />

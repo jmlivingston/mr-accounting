@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { sessionStatuses } from './constants';
 import { content } from './content/content';
 import { login, logout, useSession } from './session/session';
 
@@ -20,7 +21,7 @@ export default function App() {
             <strong>{content.app.title}</strong>
           </li>
         </ul>
-        {status === 'authenticated' && (
+        {status === sessionStatuses.authenticated && (
           <ul>
             <li>
               <button className="secondary" onClick={() => void logout()}>
@@ -30,10 +31,10 @@ export default function App() {
           </ul>
         )}
       </nav>
-      {status === 'loading' && <Loading />}
+      {status === sessionStatuses.loading && <Loading />}
       <Suspense fallback={<Loading />}>
-        {status === 'unauthenticated' && <LoginForm onLogin={login} />}
-        {status === 'authenticated' && <Dashboard />}
+        {status === sessionStatuses.unauthenticated && <LoginForm onLogin={login} />}
+        {status === sessionStatuses.authenticated && <Dashboard />}
       </Suspense>
     </main>
   );

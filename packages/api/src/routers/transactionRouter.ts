@@ -1,4 +1,5 @@
 import { scopes } from '../config';
+import { errorCodes } from '../constants';
 import { ApiError } from '../errors';
 import { transactionInputSchema } from '../schemas/transaction';
 import { router, scopedProcedure } from '../trpc';
@@ -12,7 +13,7 @@ export const transactionRouter = router({
     const result = await ctx.ledger.post(input);
     if (!result.ok) {
       throw new ApiError({
-        code: 'BAD_REQUEST',
+        code: errorCodes.badRequest,
         reason: result.reason,
         message: 'Insufficient funds: this transaction would result in a negative balance',
       });

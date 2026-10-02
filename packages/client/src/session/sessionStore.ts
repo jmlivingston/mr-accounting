@@ -1,8 +1,10 @@
-export type SessionStatus = 'loading' | 'authenticated' | 'unauthenticated';
+import { sessionStatuses } from '../constants';
+
+export type SessionStatus = (typeof sessionStatuses)[keyof typeof sessionStatuses];
 
 type SessionState = { status: SessionStatus; csrfToken: string | null };
 
-const initialState: SessionState = { status: 'loading', csrfToken: null };
+const initialState: SessionState = { status: sessionStatuses.loading, csrfToken: null };
 
 let state = initialState;
 const listeners = new Set<() => void>();
@@ -22,7 +24,7 @@ export const sessionStore = {
       listeners.delete(listener);
     };
   },
-  begin: (csrfToken: string) => setState({ status: 'authenticated', csrfToken }),
-  end: () => setState({ status: 'unauthenticated', csrfToken: null }),
+  begin: (csrfToken: string) => setState({ status: sessionStatuses.authenticated, csrfToken }),
+  end: () => setState({ status: sessionStatuses.unauthenticated, csrfToken: null }),
   reset: () => setState(initialState),
 };

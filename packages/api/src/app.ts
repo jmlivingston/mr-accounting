@@ -1,6 +1,7 @@
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import express from 'express';
 import { limits } from './config';
+import { errorCodes } from './constants';
 import { createJsonFileLedgerAdapter } from './ledger/jsonFileAdapter';
 import { createLedger, type Ledger } from './ledger/ledger';
 import { logger } from './logger';
@@ -35,7 +36,7 @@ export function createApp({ ledger = createLedger(createJsonFileLedgerAdapter())
       router: appRouter,
       createContext: createContext(ledger),
       onError: ({ error, path }) => {
-        if (error.code === 'INTERNAL_SERVER_ERROR') {
+        if (error.code === errorCodes.internalServerError) {
           logger.error(`tRPC error on ${path}:`, error);
         }
       },

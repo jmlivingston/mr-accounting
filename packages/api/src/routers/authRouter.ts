@@ -1,4 +1,5 @@
 import { config, session } from '../config';
+import { errorCodes, errorReasons } from '../constants';
 import { ApiError } from '../errors';
 import { loginInputSchema } from '../schemas/auth';
 import { authenticate, createAccessToken } from '../services/authService';
@@ -16,8 +17,8 @@ export const authRouter = router({
     const user = await authenticate(input.username, input.password);
     if (!user) {
       throw new ApiError({
-        code: 'UNAUTHORIZED',
-        reason: 'invalidCredentials',
+        code: errorCodes.unauthorized,
+        reason: errorReasons.invalidCredentials,
         message: 'Invalid username or password',
       });
     }
