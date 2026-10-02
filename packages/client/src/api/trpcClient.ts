@@ -1,4 +1,4 @@
-import { createTRPCClient, httpLink, TRPCClientError } from '@trpc/client';
+import { createTRPCClient, httpBatchLink, TRPCClientError } from '@trpc/client';
 import type { AppRouter } from 'api';
 import { apiUrl, csrfHeader } from '../constants';
 
@@ -10,7 +10,7 @@ export function setCsrfToken(token: string | null) {
 
 export const trpc = createTRPCClient<AppRouter>({
   links: [
-    httpLink({
+    httpBatchLink({
       url: `${apiUrl}/trpc`,
       fetch: (input, init) => fetch(input, { ...init, credentials: 'include' }),
       headers: () => (csrfToken ? { [csrfHeader]: csrfToken } : {}),
