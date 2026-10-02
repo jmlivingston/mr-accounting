@@ -8,7 +8,7 @@ type Props = {
   onLogin: (username: string, password: string) => Promise<void>;
 };
 
-export function LoginForm({ onLogin }: Props) {
+export default function LoginForm({ onLogin }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

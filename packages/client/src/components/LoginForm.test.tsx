@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { content } from '../content/content';
 import { trpcError } from '../test/trpcErrors';
-import { LoginForm } from './LoginForm';
+import LoginForm from './LoginForm';
 
 function setup(onLogin = vi.fn<(username: string, password: string) => Promise<void>>().mockResolvedValue()) {
   const user = userEvent.setup();

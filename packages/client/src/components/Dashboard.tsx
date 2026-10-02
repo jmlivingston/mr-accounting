@@ -8,7 +8,7 @@ type Props = {
   onSessionExpired: () => void;
 };
 
-export function Dashboard({ onSessionExpired }: Props) {
+export default function Dashboard({ onSessionExpired }: Props) {
   const { balance, transactions, loadError, addTransaction } = useAccount(onSessionExpired);
 
   return (
