@@ -61,6 +61,28 @@ All optional. API environment variables:
 
 Client: `VITE_API_URL` (default `http://localhost:3001`), read at build time.
 
+## Localization
+
+All user-facing text is in `packages/client/src/content/content.en-US.json`.
+
+- To add a language, copy it to `content.<locale>.json` (for example `content.es.json`) and translate. It is picked up automatically, and you can omit keys: missing ones fall back to English.
+- The locale comes from the browser's language list (`navigator.languages`), falling back to `en-US`. It also sets the page `lang`.
+- Not yet localized: currency and date formatting (`en-US`, USD in `packages/client/src/constants.ts`), and the API's own error messages, which stay in English for logs and API users. The client shows localized text based on the error reason or validation issue instead.
+
+## Changing validation rules
+
+Rules are Zod schemas that apply on both the server and the client form. Paths below are under `packages/api/src/`.
+
+| Rule                                                             | Where                    |
+| ---------------------------------------------------------------- | ------------------------ |
+| Amount range, description length, transaction types              | `schemas/transaction.ts` |
+| Date window (clock skew, how far back)                           | `schemas/transaction.ts` |
+| Login field lengths                                              | `schemas/auth.ts`        |
+| No negative balance                                              | `ledger/ledger.ts`       |
+| Recent transaction count, rate limits, body size, session length | `config.ts`              |
+
+After changing a rule, update the matching message in the content file's `validation` section (wording that mentions a limit, such as "a year ago", is not generated). A new kind of rule also needs a case in `packages/client/src/validationMessages.ts`. Update the schema tests alongside.
+
 ## How it works
 
 - **API:** tRPC under `/trpc`. Login sets an HttpOnly cookie holding a JWT; mutations also need the CSRF token (`x-csrf-token` header) returned at login. Users and their scopes live in `auth.json`.
