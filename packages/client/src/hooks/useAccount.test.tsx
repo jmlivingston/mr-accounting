@@ -1,7 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { TRPCClientError } from '@trpc/client';
 import type { Transaction, TransactionInput } from 'api/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { content } from '../content/content';
+import { trpcError } from '../test/trpcErrors';
 import { useAccount } from './useAccount';
 
 const mocks = vi.hoisted(() => ({
@@ -39,9 +40,7 @@ const input: TransactionInput = {
 const onSessionExpired = vi.fn();
 
 function unauthorized() {
-  return new TRPCClientError('Unauthorized', {
-    result: { error: { message: 'Unauthorized', code: -32001, data: { code: 'UNAUTHORIZED' } } } as never,
-  });
+  return trpcError('UNAUTHORIZED');
 }
 
 beforeEach(() => {
@@ -87,9 +86,9 @@ describe('useAccount', () => {
   });
 
   it('reports a load error without expiring the session', async () => {
-    mocks.balance.mockRejectedValue(new TRPCClientError('Internal server error'));
+    mocks.balance.mockRejectedValue(trpcError('INTERNAL_SERVER_ERROR'));
     const { result } = renderHook(() => useAccount(onSessionExpired));
-    await waitFor(() => expect(result.current.loadError).toBe('Internal server error'));
+    await waitFor(() => expect(result.current.loadError).toBe(content.errors.internal));
     expect(onSessionExpired).not.toHaveBeenCalled();
   });
 
@@ -112,10 +111,10 @@ describe('useAccount', () => {
   });
 
   it('clears an earlier load error after a successful refresh', async () => {
-    mocks.balance.mockRejectedValueOnce(new TRPCClientError('Temporary failure'));
+    mocks.balance.mockRejectedValueOnce(trpcError('INTERNAL_SERVER_ERROR'));
     mocks.create.mockResolvedValue(transaction);
     const { result } = renderHook(() => useAccount(onSessionExpired));
-    await waitFor(() => expect(result.current.loadError).toBe('Temporary failure'));
+    await waitFor(() => expect(result.current.loadError).toBe(content.errors.internal));
 
     await act(() => result.current.addTransaction(input));
 
@@ -124,13 +123,13 @@ describe('useAccount', () => {
   });
 
   it('throws the server message when creating fails and does not refresh', async () => {
-    mocks.create.mockRejectedValue(new TRPCClientError('Insufficient funds'));
+    mocks.create.mockRejectedValue(trpcError('BAD_REQUEST', 'insufficientFunds'));
     const { result } = renderHook(() => useAccount(onSessionExpired));
     await waitFor(() => expect(result.current.balance).toBe(50));
     mocks.balance.mockClear();
 
     await act(async () => {
-      await expect(result.current.addTransaction(input)).rejects.toThrow('Insufficient funds');
+      await expect(result.current.addTransaction(input)).rejects.toThrow(content.errors.insufficientFunds);
     });
     expect(mocks.balance).not.toHaveBeenCalled();
   });
@@ -141,7 +140,7 @@ describe('useAccount', () => {
     await waitFor(() => expect(result.current.balance).toBe(50));
 
     await act(async () => {
-      await expect(result.current.addTransaction(input)).rejects.toThrow('Unauthorized');
+      await expect(result.current.addTransaction(input)).rejects.toThrow(content.errors.unauthorized);
     });
     expect(onSessionExpired).toHaveBeenCalledTimes(1);
   });

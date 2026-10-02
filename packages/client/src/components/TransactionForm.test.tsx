@@ -2,6 +2,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { maxDescriptionLength, maxTransactionAmount, minTransactionAmount, type TransactionInput } from 'api/schemas';
 import { describe, expect, it, vi } from 'vitest';
+import { content } from '../content/content';
+import { getIssueMessage } from '../validationMessages';
 import { TransactionForm } from './TransactionForm';
 
 function field(name: string) {
@@ -40,7 +42,7 @@ describe('TransactionForm', () => {
     const { user } = setup();
     await user.click(screen.getByRole('button', { name: 'Submit' }));
     expect(screen.getByRole('spinbutton', { name: 'Amount' })).toBeInTheDocument();
-    expect(field('Amount').closest('label')).not.toHaveTextContent('Too');
+    expect(field('Amount').closest('label')).not.toHaveTextContent(content.validation.amount.max.slice(0, 10));
   });
 
   it('limits the description length', () => {
@@ -80,10 +82,10 @@ describe('TransactionForm', () => {
 
     const amount = field('Amount');
     expect(amount).toHaveAttribute('aria-invalid', 'true');
-    expect(amount).toHaveAccessibleDescription(`Too big: expected number to be <=${maxTransactionAmount}`);
+    expect(amount).toHaveAccessibleDescription(getIssueMessage({ path: ['amount'], code: 'too_big' }));
     const description = field('Description');
     expect(description).toHaveAttribute('aria-invalid', 'true');
-    expect(description).toHaveAccessibleDescription(/Too small/);
+    expect(description).toHaveAccessibleDescription(content.validation.description.required);
     expect(field('Type')).not.toHaveAttribute('aria-invalid');
   });
 

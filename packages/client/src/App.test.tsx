@@ -1,8 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { TRPCClientError } from '@trpc/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
+import { content } from './content/content';
+import { trpcError } from './test/trpcErrors';
 
 const mocks = vi.hoisted(() => ({
   session: vi.fn(),
@@ -95,19 +96,15 @@ describe('App', () => {
 
   it('returns to the login form when the session expires mid-use', async () => {
     mocks.session.mockResolvedValue({ csrfToken: 'csrf' });
-    mocks.balance.mockRejectedValue(
-      new TRPCClientError('Unauthorized', {
-        result: { error: { message: 'Unauthorized', code: -32001, data: { code: 'UNAUTHORIZED' } } } as never,
-      }),
-    );
+    mocks.balance.mockRejectedValue(trpcError('UNAUTHORIZED'));
     render(<App />);
     expect(await screen.findByRole('heading', { name: 'Log in' })).toBeInTheDocument();
   });
 
   it('shows load errors on the dashboard', async () => {
     mocks.session.mockResolvedValue({ csrfToken: 'csrf' });
-    mocks.balance.mockRejectedValue(new TRPCClientError('Internal server error'));
+    mocks.balance.mockRejectedValue(trpcError('INTERNAL_SERVER_ERROR'));
     render(<App />);
-    expect(await screen.findByRole('alert')).toHaveTextContent('Internal server error');
+    expect(await screen.findByRole('alert')).toHaveTextContent(content.errors.internal);
   });
 });

@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { TRPCClientError } from '@trpc/client';
 import { describe, expect, it, vi } from 'vitest';
+import { content } from '../content/content';
+import { trpcError } from '../test/trpcErrors';
 import { LoginForm } from './LoginForm';
 
 function setup(onLogin = vi.fn<(username: string, password: string) => Promise<void>>().mockResolvedValue()) {
@@ -40,10 +41,10 @@ describe('LoginForm', () => {
   });
 
   it('shows the server error and marks both fields invalid when login fails', async () => {
-    const failure = TRPCClientError.from(new Error('Invalid username or password'));
+    const failure = trpcError('UNAUTHORIZED', 'invalidCredentials', 'Invalid username or password');
     const { user } = setup(vi.fn().mockRejectedValue(failure));
     await fillAndSubmit(user, 'alice', 'wrong');
-    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid username or password');
+    expect(await screen.findByRole('alert')).toHaveTextContent(content.errors.invalidCredentials);
     expect(screen.getByLabelText('Username')).toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByLabelText('Password')).toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByRole('button', { name: 'Log in' })).toBeEnabled();
@@ -52,7 +53,7 @@ describe('LoginForm', () => {
   it('shows a generic message when the server is unreachable', async () => {
     const { user } = setup(vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
     await fillAndSubmit(user, 'alice', 'secret');
-    expect(await screen.findByRole('alert')).toHaveTextContent('Unable to reach the server');
+    expect(await screen.findByRole('alert')).toHaveTextContent(content.errors.network);
   });
 
   it('disables the button while the login is in flight', async () => {

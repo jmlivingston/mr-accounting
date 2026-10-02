@@ -1,5 +1,5 @@
-import { TRPCError } from '@trpc/server';
 import { scopes } from '../config';
+import { ApiError } from '../errors';
 import { transactionInputSchema } from '../schemas/transaction';
 import {
   addTransaction,
@@ -20,7 +20,7 @@ export const transactionRouter = router({
       return await addTransaction(input);
     } catch (error) {
       if (error instanceof InsufficientFundsError) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: error.message });
+        throw new ApiError({ code: 'BAD_REQUEST', reason: 'insufficientFunds', message: error.message });
       }
       throw error;
     }

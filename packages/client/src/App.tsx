@@ -1,3 +1,4 @@
+import { content } from './content/content';
 import { Dashboard } from './components/Dashboard';
 import { LoginForm } from './components/LoginForm';
 import { useAuth } from './hooks/useAuth';
@@ -10,20 +11,20 @@ export default function App() {
       <nav>
         <ul>
           <li>
-            <strong>Mr. Accounting</strong>
+            <strong>{content.app.title}</strong>
           </li>
         </ul>
         {status === 'authenticated' && (
           <ul>
             <li>
               <button className="secondary" onClick={() => void logout()}>
-                Log out
+                {content.app.logout}
               </button>
             </li>
           </ul>
         )}
       </nav>
-      {status === 'loading' && <p aria-busy="true">Loading</p>}
+      {status === 'loading' && <p aria-busy="true">{content.app.loading}</p>}
       {status === 'unauthenticated' && <LoginForm onLogin={login} />}
       {status === 'authenticated' && <Dashboard onSessionExpired={expireSession} />}
     </main>

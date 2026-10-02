@@ -1,13 +1,9 @@
 import { TRPCClientError } from '@trpc/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { csrfHeader } from '../constants';
+import { content } from '../content/content';
+import { trpcError } from '../test/trpcErrors';
 import { getErrorMessage, isUnauthorized, setCsrfToken, trpc } from './trpcClient';
-
-function serverError(code: string, message = 'Server said no') {
-  return new TRPCClientError(message, {
-    result: { error: { message, code: -32000, data: { code, httpStatus: 400 } } } as never,
-  });
-}
 
 function batchResponse(...data: unknown[]) {
   return new Response(JSON.stringify(data.map((item) => ({ result: { data: item } }))), {
@@ -21,19 +17,46 @@ afterEach(() => {
 });
 
 describe('getErrorMessage', () => {
-  it('returns the message from a tRPC error', () => {
-    expect(getErrorMessage(serverError('BAD_REQUEST', 'amount: Too big'))).toBe('amount: Too big');
+  it('maps a server reason to its localized text', () => {
+    expect(getErrorMessage(trpcError('UNAUTHORIZED', 'invalidCredentials', 'Invalid username or password'))).toBe(
+      content.errors.invalidCredentials,
+    );
+    expect(getErrorMessage(trpcError('BAD_REQUEST', 'insufficientFunds'))).toBe(content.errors.insufficientFunds);
+    expect(getErrorMessage(trpcError('FORBIDDEN', 'invalidCsrfToken'))).toBe(content.errors.invalidCsrfToken);
+    expect(getErrorMessage(trpcError('BAD_REQUEST', 'validation'))).toBe(content.errors.validation);
   });
 
-  it.each([new TypeError('Failed to fetch'), 'boom', null])('hides non-tRPC failures: %s', (error) => {
-    expect(getErrorMessage(error)).toBe('Unable to reach the server');
+  it('prefers the reason over the generic code message', () => {
+    expect(getErrorMessage(trpcError('UNAUTHORIZED', 'invalidCredentials'))).not.toBe(content.errors.unauthorized);
   });
+
+  it.each([
+    ['UNAUTHORIZED', content.errors.unauthorized],
+    ['FORBIDDEN', content.errors.forbidden],
+    ['INTERNAL_SERVER_ERROR', content.errors.internal],
+    ['TOO_MANY_REQUESTS', content.errors.unknown],
+  ])('maps the %s code when there is no reason', (code, expected) => {
+    expect(getErrorMessage(trpcError(code))).toBe(expected);
+  });
+
+  it('never shows the server message text', () => {
+    expect(getErrorMessage(trpcError('INTERNAL_SERVER_ERROR', undefined, 'secret english message'))).not.toContain(
+      'secret',
+    );
+  });
+
+  it.each([new TypeError('Failed to fetch'), new TRPCClientError('Failed to fetch'), 'boom', null])(
+    'reports a network problem when there is no tRPC response: %s',
+    (error) => {
+      expect(getErrorMessage(error)).toBe(content.errors.network);
+    },
+  );
 });
 
 describe('isUnauthorized', () => {
   it('is true only for tRPC UNAUTHORIZED errors', () => {
-    expect(isUnauthorized(serverError('UNAUTHORIZED'))).toBe(true);
-    expect(isUnauthorized(serverError('FORBIDDEN'))).toBe(false);
+    expect(isUnauthorized(trpcError('UNAUTHORIZED'))).toBe(true);
+    expect(isUnauthorized(trpcError('FORBIDDEN'))).toBe(false);
     expect(isUnauthorized(new Error('UNAUTHORIZED'))).toBe(false);
     expect(isUnauthorized(undefined)).toBe(false);
   });

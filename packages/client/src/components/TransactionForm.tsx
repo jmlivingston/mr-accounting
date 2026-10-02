@@ -7,6 +7,8 @@ import {
   type TransactionInput,
 } from 'api/schemas';
 import { useState, type SubmitEvent } from 'react';
+import { content } from '../content/content';
+import { getIssueMessage } from '../validationMessages';
 import { ErrorAlert } from './ErrorAlert';
 
 type Props = {
@@ -52,7 +54,7 @@ export function TransactionForm({ onSubmit }: Props) {
     });
     if (!parsed.success) {
       const errors: Record<string, string> = {};
-      for (const { path, message } of parsed.error.issues) errors[String(path[0])] ??= message;
+      for (const issue of parsed.error.issues) errors[String(issue.path[0])] ??= getIssueMessage(issue);
       setFieldErrors(errors);
       setError(null);
       return;
@@ -74,16 +76,16 @@ export function TransactionForm({ onSubmit }: Props) {
   return (
     <article>
       <header>
-        <h2>New transaction</h2>
+        <h2>{content.transactionForm.heading}</h2>
       </header>
       <form onSubmit={(event) => void handleSubmit(event)} key={defaultDate}>
         <label>
-          Date and time
+          {content.transactionForm.dateTime}
           <input name="date" type="datetime-local" defaultValue={defaultDate} required {...invalidProps('date')} />
         </label>
         {fieldError('date')}
         <label>
-          Amount
+          {content.transactionForm.amount}
           <input
             name="amount"
             type="number"
@@ -97,24 +99,24 @@ export function TransactionForm({ onSubmit }: Props) {
         </label>
         {fieldError('amount')}
         <label>
-          Type
+          {content.transactionForm.type}
           <select name="type" defaultValue={transactionTypes[0]} required {...invalidProps('type')}>
             {transactionTypes.map((type) => (
               <option key={type} value={type}>
-                {type}
+                {content.transactionTypes[type]}
               </option>
             ))}
           </select>
         </label>
         {fieldError('type')}
         <label>
-          Description
+          {content.transactionForm.description}
           <input name="description" maxLength={maxDescriptionLength} required {...invalidProps('description')} />
         </label>
         {fieldError('description')}
         {error && <ErrorAlert>{error}</ErrorAlert>}
         <button type="submit" aria-busy={isSubmitting} disabled={isSubmitting}>
-          Submit
+          {content.transactionForm.submit}
         </button>
       </form>
     </article>

@@ -1,0 +1,68 @@
+{
+  "app": {
+    "title": "Mr. Accounting",
+    "loading": "Loading",
+    "logout": "Log out"
+  },
+  "login": {
+    "heading": "Log in",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Log in",
+    "required": "Username and password are required"
+  },
+  "balance": {
+    "heading": "Balance"
+  },
+  "transactionList": {
+    "heading": "Last 5 transactions",
+    "empty": "No transactions yet.",
+    "columns": {
+      "date": "Date",
+      "description": "Description",
+      "type": "Type",
+      "amount": "Amount"
+    }
+  },
+  "transactionForm": {
+    "heading": "New transaction",
+    "dateTime": "Date and time",
+    "amount": "Amount",
+    "type": "Type",
+    "description": "Description",
+    "submit": "Submit"
+  },
+  "transactionTypes": {
+    "debit": "debit",
+    "credit": "credit"
+  },
+  "errors": {
+    "network": "Unable to reach the server",
+    "unknown": "Something went wrong. Please try again.",
+    "unauthorized": "Your session has expired. Please log in again.",
+    "forbidden": "You don't have permission to do that.",
+    "internal": "The server ran into a problem. Please try again later.",
+    "invalidCredentials": "Invalid username or password",
+    "invalidCsrfToken": "Your session is no longer valid. Please reload the page and try again.",
+    "insufficientFunds": "Insufficient funds: this transaction would result in a negative balance",
+    "validation": "Some of the information entered is not valid"
+  },
+  "validation": {
+    "fallback": "This value is not valid",
+    "date": {
+      "invalid": "Enter a valid date and time"
+    },
+    "amount": {
+      "invalid": "Enter a valid amount",
+      "min": "Amount must be at least {min}",
+      "max": "Amount must be at most {max}"
+    },
+    "type": {
+      "invalid": "Choose a valid type"
+    },
+    "description": {
+      "required": "Enter a description",
+      "max": "Description must be at most {max} characters"
+    }
+  }
+}

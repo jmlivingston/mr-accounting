@@ -1,5 +1,5 @@
-import { TRPCError } from '@trpc/server';
 import { config, session } from '../config';
+import { ApiError } from '../errors';
 import { loginInputSchema } from '../schemas/auth';
 import { authenticate, createAccessToken } from '../services/authService';
 import { authenticatedProcedure, publicProcedure, router } from '../trpc';
@@ -15,8 +15,9 @@ export const authRouter = router({
   login: publicProcedure.input(loginInputSchema).mutation(async ({ input, ctx }) => {
     const user = await authenticate(input.username, input.password);
     if (!user) {
-      throw new TRPCError({
+      throw new ApiError({
         code: 'UNAUTHORIZED',
+        reason: 'invalidCredentials',
         message: 'Invalid username or password',
       });
     }

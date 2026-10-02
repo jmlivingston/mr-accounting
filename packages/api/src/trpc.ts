@@ -2,6 +2,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import { $ZodError } from 'zod/v4/core';
 import { session } from './config';
+import { ApiError, type ErrorReason } from './errors';
 import { verifyAccessToken } from './services/authService';
 
 export async function createContext({ req, res }: CreateExpressContextOptions) {
@@ -17,14 +18,16 @@ const t = initTRPC.context<Context>().create({
   isDev: false,
   errorFormatter({ shape, error }) {
     // Only input validation failures are safe to show; other Zod errors come from stored data
-    if (error.code === 'BAD_REQUEST' && error.cause instanceof $ZodError) {
-      const message = error.cause.issues.map(({ path, message }) => `${path.join('.')}: ${message}`).join('; ');
-      return { ...shape, message };
+    const validationError = error.code === 'BAD_REQUEST' && error.cause instanceof $ZodError ? error.cause : null;
+    let message = shape.message;
+    let reason: ErrorReason | undefined = error instanceof ApiError ? error.reason : undefined;
+    if (validationError) {
+      message = validationError.issues.map(({ path, message }) => `${path.join('.')}: ${message}`).join('; ');
+      reason = 'validation';
+    } else if (shape.data.code === 'INTERNAL_SERVER_ERROR') {
+      message = 'Internal server error';
     }
-    if (shape.data.code === 'INTERNAL_SERVER_ERROR') {
-      return { ...shape, message: 'Internal server error' };
-    }
-    return shape;
+    return { ...shape, message, data: { ...shape.data, reason } };
   },
 });
 
@@ -34,7 +37,7 @@ export const publicProcedure = t.procedure;
 const requireSession = t.middleware(({ ctx, type, next }) => {
   if (!ctx.claims) throw new TRPCError({ code: 'UNAUTHORIZED' });
   if (type === 'mutation' && ctx.csrfHeader !== ctx.claims.csrfToken) {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'Invalid CSRF token' });
+    throw new ApiError({ code: 'FORBIDDEN', reason: 'invalidCsrfToken', message: 'Invalid CSRF token' });
   }
   return next({ ctx: { ...ctx, claims: ctx.claims } });
 });

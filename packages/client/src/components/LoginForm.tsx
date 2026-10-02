@@ -1,5 +1,6 @@
 import { loginInputSchema } from 'api/schemas';
 import { useState, type SubmitEvent } from 'react';
+import { content } from '../content/content';
 import { getErrorMessage } from '../api/trpcClient';
 import { ErrorAlert } from './ErrorAlert';
 
@@ -15,7 +16,7 @@ export function LoginForm({ onLogin }: Props) {
     event.preventDefault();
     const parsed = loginInputSchema.safeParse(Object.fromEntries(new FormData(event.currentTarget)));
     if (!parsed.success) {
-      setError('Username and password are required');
+      setError(content.login.required);
       return;
     }
     setIsSubmitting(true);
@@ -31,15 +32,15 @@ export function LoginForm({ onLogin }: Props) {
   return (
     <article>
       <header>
-        <h2>Log in</h2>
+        <h2>{content.login.heading}</h2>
       </header>
       <form onSubmit={(event) => void handleSubmit(event)}>
         <label>
-          Username
+          {content.login.username}
           <input name="username" autoComplete="username" required aria-invalid={error ? true : undefined} />
         </label>
         <label>
-          Password
+          {content.login.password}
           <input
             name="password"
             type="password"
@@ -50,7 +51,7 @@ export function LoginForm({ onLogin }: Props) {
         </label>
         {error && <ErrorAlert>{error}</ErrorAlert>}
         <button type="submit" aria-busy={isSubmitting} disabled={isSubmitting}>
-          Log in
+          {content.login.submit}
         </button>
       </form>
     </article>

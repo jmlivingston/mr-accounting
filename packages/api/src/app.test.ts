@@ -35,7 +35,7 @@ beforeEach(() => seedUser());
 
 type TrpcResult = {
   result?: { data: Record<string, unknown> };
-  error?: { message: string; data: { code: string } };
+  error?: { message: string; data: { code: string; reason?: string } };
 };
 
 async function call(
@@ -95,6 +95,7 @@ describe('auth.login', () => {
     });
     expect(response.status).toBe(401);
     expect(body.error?.message).toBe('Invalid username or password');
+    expect(body.error?.data.reason).toBe('invalidCredentials');
     expect(response.headers.getSetCookie()).toEqual([]);
   });
 
@@ -105,12 +106,14 @@ describe('auth.login', () => {
     });
     expect(response.status).toBe(401);
     expect(body.error?.message).toBe('Invalid username or password');
+    expect(body.error?.data.reason).toBe('invalidCredentials');
   });
 
   it('rejects an empty username with a validation message', async () => {
     const { response, body } = await call('auth.login', { method: 'POST', input: { username: '', password } });
     expect(response.status).toBe(400);
     expect(body.error?.message).toContain('username: Too small');
+    expect(body.error?.data.reason).toBe('validation');
   });
 });
 
@@ -146,6 +149,7 @@ describe('auth.session and auth.logout', () => {
     const { response, body } = await call('auth.logout', { method: 'POST', cookie });
     expect(response.status).toBe(403);
     expect(body.error?.message).toBe('Invalid CSRF token');
+    expect(body.error?.data.reason).toBe('invalidCsrfToken');
   });
 });
 
@@ -186,8 +190,10 @@ describe('transactions', () => {
 
   it('requires the write scope to create', async () => {
     const { cookie, csrf } = await login([scopes.transactionsRead]);
-    const { response } = await call('transactions.create', { method: 'POST', input: transaction, cookie, csrf });
+    const { response, body } = await call('transactions.create', { method: 'POST', input: transaction, cookie, csrf });
     expect(response.status).toBe(403);
+    expect(body.error?.data.code).toBe('FORBIDDEN');
+    expect(body.error?.data.reason).toBeUndefined();
     expect((await call('transactions.balance', { cookie })).response.status).toBe(200);
   });
 
@@ -206,6 +212,7 @@ describe('transactions', () => {
     });
     expect(response.status).toBe(400);
     expect(body.error?.message).toBe(`amount: Too big: expected number to be <=${maxTransactionAmount}`);
+    expect(body.error?.data.reason).toBe('validation');
   });
 
   it('rejects a debit that overdraws the account', async () => {
@@ -218,6 +225,7 @@ describe('transactions', () => {
     });
     expect(response.status).toBe(400);
     expect(body.error?.message).toContain('Insufficient funds');
+    expect(body.error?.data.reason).toBe('insufficientFunds');
   });
 
   it('hides internal errors from the client but logs them', async () => {
@@ -227,6 +235,7 @@ describe('transactions', () => {
     const { response, body } = await call('transactions.balance', { cookie });
     expect(response.status).toBe(500);
     expect(body.error?.message).toBe('Internal server error');
+    expect(body.error?.data.reason).toBeUndefined();
     expect(logged).toHaveBeenCalledWith('tRPC error on transactions.balance:', expect.anything());
     logged.mockRestore();
   });
