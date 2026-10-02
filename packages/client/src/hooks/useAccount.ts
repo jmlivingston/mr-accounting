@@ -2,14 +2,6 @@ import type { Transaction, TransactionInput } from 'api/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getErrorMessage, isUnauthorized, trpc } from '../api/trpcClient';
 
-async function fetchAccount() {
-  const [{ balance }, transactions] = await Promise.all([
-    trpc.transactions.balance.query(),
-    trpc.transactions.recent.query(),
-  ]);
-  return { balance, transactions };
-}
-
 export function useAccount(onSessionExpired: () => void) {
   const [balance, setBalance] = useState<number | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -28,7 +20,8 @@ export function useAccount(onSessionExpired: () => void) {
 
   const refresh = useCallback(() => {
     return (
-      fetchAccount()
+      trpc.transactions.account
+        .query()
         .then((account) => {
           setBalance(account.balance);
           setTransactions(account.transactions);

@@ -87,12 +87,12 @@ describe('trpc client', () => {
   });
 
   it('batches concurrent queries into a single request', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(batchResponse({ balance: 5 }, []));
+    const fetchMock = vi.fn().mockResolvedValue(batchResponse({ csrfToken: null }, { balance: 5, transactions: [] }));
     vi.stubGlobal('fetch', fetchMock);
-    const [balance, recent] = await Promise.all([trpc.transactions.balance.query(), trpc.transactions.recent.query()]);
+    const [session, account] = await Promise.all([trpc.auth.session.query(), trpc.transactions.account.query()]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('transactions.balance,transactions.recent');
-    expect(balance).toEqual({ balance: 5 });
-    expect(recent).toEqual([]);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('auth.session,transactions.account');
+    expect(session).toEqual({ csrfToken: null });
+    expect(account).toEqual({ balance: 5, transactions: [] });
   });
 });

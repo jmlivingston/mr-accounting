@@ -6,8 +6,7 @@ import { trpcError } from '../test/trpcErrors';
 import { useAccount } from './useAccount';
 
 const mocks = vi.hoisted(() => ({
-  balance: vi.fn(),
-  recent: vi.fn(),
+  account: vi.fn(),
   create: vi.fn(),
 }));
 
@@ -15,8 +14,7 @@ vi.mock('../api/trpcClient', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../api/trpcClient')>()),
   trpc: {
     transactions: {
-      balance: { query: mocks.balance },
-      recent: { query: mocks.recent },
+      account: { query: mocks.account },
       create: { mutate: mocks.create },
     },
   },
@@ -45,8 +43,7 @@ function unauthorized() {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.balance.mockResolvedValue({ balance: 50 });
-  mocks.recent.mockResolvedValue([transaction]);
+  mocks.account.mockResolvedValue({ balance: 50, transactions: [transaction] });
 });
 
 describe('useAccount', () => {
@@ -64,7 +61,7 @@ describe('useAccount', () => {
     await waitFor(() => expect(result.current.balance).toBe(50));
     rerender();
     rerender();
-    expect(mocks.balance).toHaveBeenCalledTimes(1);
+    expect(mocks.account).toHaveBeenCalledTimes(1);
   });
 
   it('calls the latest callback when the session expires', async () => {
@@ -86,14 +83,14 @@ describe('useAccount', () => {
   });
 
   it('reports a load error without expiring the session', async () => {
-    mocks.balance.mockRejectedValue(trpcError('INTERNAL_SERVER_ERROR'));
+    mocks.account.mockRejectedValue(trpcError('INTERNAL_SERVER_ERROR'));
     const { result } = renderHook(() => useAccount(onSessionExpired));
     await waitFor(() => expect(result.current.loadError).toBe(content.errors.internal));
     expect(onSessionExpired).not.toHaveBeenCalled();
   });
 
   it('expires the session when loading is unauthorized', async () => {
-    mocks.recent.mockRejectedValue(unauthorized());
+    mocks.account.mockRejectedValue(unauthorized());
     renderHook(() => useAccount(onSessionExpired));
     await waitFor(() => expect(onSessionExpired).toHaveBeenCalledTimes(1));
   });
@@ -102,7 +99,7 @@ describe('useAccount', () => {
     mocks.create.mockResolvedValue(transaction);
     const { result } = renderHook(() => useAccount(onSessionExpired));
     await waitFor(() => expect(result.current.balance).toBe(50));
-    mocks.balance.mockResolvedValue({ balance: 100 });
+    mocks.account.mockResolvedValue({ balance: 100, transactions: [transaction] });
 
     await act(() => result.current.addTransaction(input));
 
@@ -111,7 +108,7 @@ describe('useAccount', () => {
   });
 
   it('clears an earlier load error after a successful refresh', async () => {
-    mocks.balance.mockRejectedValueOnce(trpcError('INTERNAL_SERVER_ERROR'));
+    mocks.account.mockRejectedValueOnce(trpcError('INTERNAL_SERVER_ERROR'));
     mocks.create.mockResolvedValue(transaction);
     const { result } = renderHook(() => useAccount(onSessionExpired));
     await waitFor(() => expect(result.current.loadError).toBe(content.errors.internal));
@@ -126,12 +123,12 @@ describe('useAccount', () => {
     mocks.create.mockRejectedValue(trpcError('BAD_REQUEST', 'insufficientFunds'));
     const { result } = renderHook(() => useAccount(onSessionExpired));
     await waitFor(() => expect(result.current.balance).toBe(50));
-    mocks.balance.mockClear();
+    mocks.account.mockClear();
 
     await act(async () => {
       await expect(result.current.addTransaction(input)).rejects.toThrow(content.errors.insufficientFunds);
     });
-    expect(mocks.balance).not.toHaveBeenCalled();
+    expect(mocks.account).not.toHaveBeenCalled();
   });
 
   it('expires the session when creating is unauthorized', async () => {

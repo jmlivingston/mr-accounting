@@ -9,8 +9,7 @@ const mocks = vi.hoisted(() => ({
   session: vi.fn(),
   login: vi.fn(),
   logout: vi.fn(),
-  balance: vi.fn(),
-  recent: vi.fn(),
+  account: vi.fn(),
   create: vi.fn(),
 }));
 
@@ -24,8 +23,7 @@ vi.mock('./api/trpcClient', async (importOriginal) => ({
       logout: { mutate: mocks.logout },
     },
     transactions: {
-      balance: { query: mocks.balance },
-      recent: { query: mocks.recent },
+      account: { query: mocks.account },
       create: { mutate: mocks.create },
     },
   },
@@ -33,16 +31,18 @@ vi.mock('./api/trpcClient', async (importOriginal) => ({
 
 beforeEach(() => {
   vi.resetAllMocks();
-  mocks.balance.mockResolvedValue({ balance: 1500 });
-  mocks.recent.mockResolvedValue([
-    {
-      id: '3f2b8c1e-5d4a-4f6b-9a7c-1e2d3c4b5a69',
-      date: '2026-03-01T12:00:00Z',
-      amount: 1500,
-      type: 'credit',
-      description: 'Salary',
-    },
-  ]);
+  mocks.account.mockResolvedValue({
+    balance: 1500,
+    transactions: [
+      {
+        id: '3f2b8c1e-5d4a-4f6b-9a7c-1e2d3c4b5a69',
+        date: '2026-03-01T12:00:00Z',
+        amount: 1500,
+        type: 'credit',
+        description: 'Salary',
+      },
+    ],
+  });
 });
 
 describe('App', () => {
@@ -96,14 +96,14 @@ describe('App', () => {
 
   it('returns to the login form when the session expires mid-use', async () => {
     mocks.session.mockResolvedValue({ csrfToken: 'csrf' });
-    mocks.balance.mockRejectedValue(trpcError('UNAUTHORIZED'));
+    mocks.account.mockRejectedValue(trpcError('UNAUTHORIZED'));
     render(<App />);
     expect(await screen.findByRole('heading', { name: 'Log in' })).toBeInTheDocument();
   });
 
   it('shows load errors on the dashboard', async () => {
     mocks.session.mockResolvedValue({ csrfToken: 'csrf' });
-    mocks.balance.mockRejectedValue(trpcError('INTERNAL_SERVER_ERROR'));
+    mocks.account.mockRejectedValue(trpcError('INTERNAL_SERVER_ERROR'));
     render(<App />);
     expect(await screen.findByRole('alert')).toHaveTextContent(content.errors.internal);
   });
