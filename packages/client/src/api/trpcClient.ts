@@ -24,5 +24,5 @@ export function getErrorMessage(error: unknown) {
 }
 
 export function isUnauthorized(error: unknown) {
-  return error instanceof TRPCClientError && error.data?.code === 'UNAUTHORIZED';
+  return error instanceof TRPCClientError && (error as TRPCClientError<AppRouter>).data?.code === 'UNAUTHORIZED';
 }

@@ -5,7 +5,7 @@ import { session } from './config';
 import { verifyAccessToken } from './services/authService';
 
 export async function createContext({ req, res }: CreateExpressContextOptions) {
-  const token = req.cookies?.[session.cookieName];
+  const token: unknown = req.cookies?.[session.cookieName];
   const claims = typeof token === 'string' ? await verifyAccessToken(token) : null;
   const csrfHeader = req.get(session.csrfHeader);
   return { req, res, claims, csrfHeader };

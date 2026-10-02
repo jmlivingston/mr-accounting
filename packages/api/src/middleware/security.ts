@@ -45,7 +45,7 @@ export const notFound: RequestHandler = (_req, res) => {
   res.status(404).json({ error: 'Not found' });
 };
 
-export const errorHandler: ErrorRequestHandler = (error, _req, res, next) => {
+export const errorHandler: ErrorRequestHandler = (error: { status?: number; statusCode?: number }, _req, res, next) => {
   if (res.headersSent) {
     next(error);
     return;

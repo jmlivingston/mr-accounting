@@ -16,7 +16,7 @@ export default function App() {
         {status === 'authenticated' && (
           <ul>
             <li>
-              <button className="secondary" onClick={logout}>
+              <button className="secondary" onClick={() => void logout()}>
                 Log out
               </button>
             </li>

@@ -19,10 +19,11 @@ export function TransactionForm({ onSubmit }: Props) {
     event.preventDefault();
     const form = event.currentTarget;
     const values = Object.fromEntries(new FormData(form));
-    const date = new Date(String(values.date));
+    const rawDate = typeof values.date === 'string' ? values.date : '';
+    const date = new Date(rawDate);
     const parsed = transactionInputSchema.safeParse({
       ...values,
-      date: Number.isNaN(date.getTime()) ? values.date : date.toISOString(),
+      date: Number.isNaN(date.getTime()) ? rawDate : date.toISOString(),
       amount: Number(values.amount),
     });
     if (!parsed.success) {
@@ -47,7 +48,7 @@ export function TransactionForm({ onSubmit }: Props) {
       <header>
         <h2>New transaction</h2>
       </header>
-      <form onSubmit={handleSubmit} key={defaultDate}>
+      <form onSubmit={(event) => void handleSubmit(event)} key={defaultDate}>
         <label>
           Date and time
           <input name="date" type="datetime-local" defaultValue={defaultDate} required />

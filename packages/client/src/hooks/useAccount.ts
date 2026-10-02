@@ -24,17 +24,21 @@ export function useAccount(onSessionExpired: () => void) {
   );
 
   const refresh = useCallback(() => {
-    return fetchAccount()
-      .then((account) => {
-        setBalance(account.balance);
-        setTransactions(account.transactions);
-        setLoadError(null);
-      })
-      .catch((error) => setLoadError(handleError(error)));
+    return (
+      fetchAccount()
+        .then((account) => {
+          setBalance(account.balance);
+          setTransactions(account.transactions);
+          setLoadError(null);
+        })
+        // Runs after the request settles, not synchronously inside the effect
+        // eslint-disable-next-line @eslint-react/set-state-in-effect
+        .catch((error) => setLoadError(handleError(error)))
+    );
   }, [handleError]);
 
   useEffect(() => {
-    refresh();
+    void refresh();
   }, [refresh]);
 
   const addTransaction = useCallback(

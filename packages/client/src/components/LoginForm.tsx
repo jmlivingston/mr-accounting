@@ -32,7 +32,7 @@ export function LoginForm({ onLogin }: Props) {
       <header>
         <h2>Log in</h2>
       </header>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={(event) => void handleSubmit(event)}>
         <label>
           Username
           <input name="username" autoComplete="username" required />
