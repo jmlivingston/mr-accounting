@@ -39,15 +39,22 @@ describe('useAuth', () => {
     expect(mocks.setCsrfToken).toHaveBeenCalledWith('csrf-1');
   });
 
-  it('is unauthenticated when there is no session', async () => {
-    mocks.session.mockRejectedValue(new TRPCClientError('Unauthorized'));
+  it('is unauthenticated when the server reports no session', async () => {
+    mocks.session.mockResolvedValue({ csrfToken: null });
+    const { result } = renderHook(() => useAuth());
+    await waitFor(() => expect(result.current.status).toBe('unauthenticated'));
+    expect(mocks.setCsrfToken).toHaveBeenCalledWith(null);
+  });
+
+  it('is unauthenticated when the session check fails', async () => {
+    mocks.session.mockRejectedValue(new TRPCClientError('Failed to fetch'));
     const { result } = renderHook(() => useAuth());
     await waitFor(() => expect(result.current.status).toBe('unauthenticated'));
     expect(mocks.setCsrfToken).not.toHaveBeenCalled();
   });
 
   it('logs in, stores the CSRF token and becomes authenticated', async () => {
-    mocks.session.mockRejectedValue(new Error('no session'));
+    mocks.session.mockResolvedValue({ csrfToken: null });
     mocks.login.mockResolvedValue({ username: 'alice', csrfToken: 'csrf-2' });
     const { result } = renderHook(() => useAuth());
     await waitFor(() => expect(result.current.status).toBe('unauthenticated'));
@@ -60,7 +67,7 @@ describe('useAuth', () => {
   });
 
   it('propagates login failures and stays unauthenticated', async () => {
-    mocks.session.mockRejectedValue(new Error('no session'));
+    mocks.session.mockResolvedValue({ csrfToken: null });
     mocks.login.mockRejectedValue(new Error('Invalid username or password'));
     const { result } = renderHook(() => useAuth());
     await waitFor(() => expect(result.current.status).toBe('unauthenticated'));

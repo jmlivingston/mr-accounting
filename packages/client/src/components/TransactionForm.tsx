@@ -1,4 +1,11 @@
-import { maxTransactionAmount, transactionInputSchema, transactionTypes, type TransactionInput } from 'api/schemas';
+import {
+  maxDescriptionLength,
+  maxTransactionAmount,
+  minTransactionAmount,
+  transactionInputSchema,
+  transactionTypes,
+  type TransactionInput,
+} from 'api/schemas';
 import { useState, type SubmitEvent } from 'react';
 import { ErrorAlert } from './ErrorAlert';
 
@@ -80,7 +87,7 @@ export function TransactionForm({ onSubmit }: Props) {
           <input
             name="amount"
             type="number"
-            min="0.01"
+            min={minTransactionAmount}
             max={maxTransactionAmount}
             step="any"
             inputMode="decimal"
@@ -102,7 +109,7 @@ export function TransactionForm({ onSubmit }: Props) {
         {fieldError('type')}
         <label>
           Description
-          <input name="description" maxLength={200} required {...invalidProps('description')} />
+          <input name="description" maxLength={maxDescriptionLength} required {...invalidProps('description')} />
         </label>
         {fieldError('description')}
         {error && <ErrorAlert>{error}</ErrorAlert>}

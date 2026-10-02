@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { TransactionInput } from 'api/schemas';
+import { maxDescriptionLength, maxTransactionAmount, minTransactionAmount, type TransactionInput } from 'api/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import { TransactionForm } from './TransactionForm';
 
@@ -43,10 +43,15 @@ describe('TransactionForm', () => {
     expect(field('Amount').closest('label')).not.toHaveTextContent('Too');
   });
 
+  it('limits the description length', () => {
+    setup();
+    expect(field('Description')).toHaveAttribute('maxlength', String(maxDescriptionLength));
+  });
+
   it('limits the amount input to the configured range', () => {
     setup();
-    expect(field('Amount')).toHaveAttribute('min', '0.01');
-    expect(field('Amount')).toHaveAttribute('max', '1000000');
+    expect(field('Amount')).toHaveAttribute('min', String(minTransactionAmount));
+    expect(field('Amount')).toHaveAttribute('max', String(maxTransactionAmount));
   });
 
   it('submits a parsed transaction with an ISO date', async () => {
@@ -69,13 +74,13 @@ describe('TransactionForm', () => {
 
   it('shows an error under each invalid field and does not submit', async () => {
     const { user, onSubmit } = setup();
-    await fill(user, { amount: '1000001', description: ' ' });
+    await fill(user, { amount: String(maxTransactionAmount + 1), description: ' ' });
     await user.click(screen.getByRole('button', { name: 'Submit' }));
     expect(onSubmit).not.toHaveBeenCalled();
 
     const amount = field('Amount');
     expect(amount).toHaveAttribute('aria-invalid', 'true');
-    expect(amount).toHaveAccessibleDescription('Too big: expected number to be <=1000000');
+    expect(amount).toHaveAccessibleDescription(`Too big: expected number to be <=${maxTransactionAmount}`);
     const description = field('Description');
     expect(description).toHaveAttribute('aria-invalid', 'true');
     expect(description).toHaveAccessibleDescription(/Too small/);

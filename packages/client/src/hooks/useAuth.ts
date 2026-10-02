@@ -11,7 +11,7 @@ export function useAuth() {
       .query()
       .then(({ csrfToken }) => {
         setCsrfToken(csrfToken);
-        setStatus('authenticated');
+        setStatus(csrfToken ? 'authenticated' : 'unauthenticated');
       })
       .catch(() => setStatus('unauthenticated'));
   }, []);

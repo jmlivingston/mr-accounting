@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { loginInputSchema } from './auth';
-import { maxTransactionAmount, transactionInputSchema, transactionSchema } from './transaction';
+import {
+  maxDescriptionLength,
+  maxTransactionAmount,
+  minTransactionAmount,
+  transactionInputSchema,
+  transactionSchema,
+} from './transaction';
 
 const validTransaction = {
   date: '2026-01-01T00:00:00Z',
@@ -30,11 +36,26 @@ describe('transactionInputSchema', () => {
     ['non-numeric amount', { amount: '5' }],
     ['unknown type', { type: 'refund' }],
     ['blank description', { description: '   ' }],
-    ['overlong description', { description: 'x'.repeat(201) }],
+    ['overlong description', { description: 'x'.repeat(maxDescriptionLength + 1) }],
     ['non-ISO date', { date: 'yesterday' }],
     ['date without time', { date: '2026-01-01' }],
   ])('rejects %s', (_name, override) => {
     expect(transactionInputSchema.safeParse({ ...validTransaction, ...override }).success).toBe(false);
+  });
+
+  it('allows a description of exactly the maximum length', () => {
+    const description = 'x'.repeat(maxDescriptionLength);
+    expect(transactionInputSchema.safeParse({ ...validTransaction, description }).success).toBe(true);
+  });
+
+  it('allows an amount of exactly the minimum', () => {
+    const result = transactionInputSchema.safeParse({ ...validTransaction, amount: minTransactionAmount });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects an amount below the minimum', () => {
+    const result = transactionInputSchema.safeParse({ ...validTransaction, amount: minTransactionAmount / 2 });
+    expect(result.success).toBe(false);
   });
 
   it('allows an amount of exactly the maximum', () => {
@@ -43,13 +64,13 @@ describe('transactionInputSchema', () => {
   });
 
   it('rejects an amount above the maximum', () => {
-    const result = transactionInputSchema.safeParse({ ...validTransaction, amount: maxTransactionAmount + 0.01 });
+    const result = transactionInputSchema.safeParse({ ...validTransaction, amount: maxTransactionAmount + 1 });
     expect(result.success).toBe(false);
   });
 
   it('reports readable English messages', () => {
-    const result = transactionInputSchema.safeParse({ ...validTransaction, amount: 2_000_000 });
-    expect(result.error?.issues[0]?.message).toBe('Too big: expected number to be <=1000000');
+    const result = transactionInputSchema.safeParse({ ...validTransaction, amount: maxTransactionAmount * 2 });
+    expect(result.error?.issues[0]?.message).toBe(`Too big: expected number to be <=${maxTransactionAmount}`);
   });
 });
 

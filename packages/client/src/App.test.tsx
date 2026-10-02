@@ -52,7 +52,7 @@ describe('App', () => {
   });
 
   it('shows the login form when there is no session', async () => {
-    mocks.session.mockRejectedValue(new TRPCClientError('Unauthorized'));
+    mocks.session.mockResolvedValue({ csrfToken: null });
     render(<App />);
     expect(await screen.findByRole('heading', { name: 'Log in' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Log out' })).not.toBeInTheDocument();
@@ -68,7 +68,7 @@ describe('App', () => {
   });
 
   it('logs in through the form and then shows the dashboard', async () => {
-    mocks.session.mockRejectedValue(new TRPCClientError('Unauthorized'));
+    mocks.session.mockResolvedValue({ csrfToken: null });
     mocks.login.mockResolvedValue({ username: 'alice', csrfToken: 'csrf' });
     const user = userEvent.setup();
     render(<App />);

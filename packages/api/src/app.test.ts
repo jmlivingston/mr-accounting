@@ -3,6 +3,7 @@ import type { Server } from 'node:http';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from './app';
 import { config, files, scopes, session } from './config';
+import { maxTransactionAmount } from './schemas/transaction';
 import { hashPassword } from './services/authService';
 import { writeJsonFile } from './storage/jsonFile';
 import { useTempDataDir } from './test/tempDataDir';
@@ -114,15 +115,16 @@ describe('auth.login', () => {
 });
 
 describe('auth.session and auth.logout', () => {
-  it('requires a session', async () => {
+  it('reports no session without an error when logged out', async () => {
     const { response, body } = await call('auth.session');
-    expect(response.status).toBe(401);
-    expect(body.error?.data.code).toBe('UNAUTHORIZED');
+    expect(response.status).toBe(200);
+    expect(body.result?.data).toEqual({ csrfToken: null });
   });
 
-  it('ignores an invalid cookie', async () => {
-    const { response } = await call('auth.session', { cookie: `${session.cookieName}=garbage` });
-    expect(response.status).toBe(401);
+  it('reports no session for an invalid cookie', async () => {
+    const { response, body } = await call('auth.session', { cookie: `${session.cookieName}=garbage` });
+    expect(response.status).toBe(200);
+    expect(body.result?.data).toEqual({ csrfToken: null });
   });
 
   it('returns the CSRF token for a valid session', async () => {
@@ -198,12 +200,12 @@ describe('transactions', () => {
     const { cookie, csrf } = await login();
     const { response, body } = await call('transactions.create', {
       method: 'POST',
-      input: { ...transaction, amount: 1_000_001 },
+      input: { ...transaction, amount: maxTransactionAmount + 1 },
       cookie,
       csrf,
     });
     expect(response.status).toBe(400);
-    expect(body.error?.message).toBe('amount: Too big: expected number to be <=1000000');
+    expect(body.error?.message).toBe(`amount: Too big: expected number to be <=${maxTransactionAmount}`);
   });
 
   it('rejects a debit that overdraws the account', async () => {

@@ -31,7 +31,8 @@ export const authRouter = router({
     ctx.res.clearCookie(session.cookieName, cookieOptions);
     return { success: true };
   }),
-  session: authenticatedProcedure.query(({ ctx }) => ({
-    csrfToken: ctx.claims.csrfToken,
+  // Public so that checking for a session when logged out is a normal 200, not a 401
+  session: publicProcedure.query(({ ctx }) => ({
+    csrfToken: ctx.claims?.csrfToken ?? null,
   })),
 });
