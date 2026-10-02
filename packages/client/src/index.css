@@ -5,3 +5,11 @@
   color: var(--pico-del-color);
   font-weight: 600;
 }
+
+/* Sits outside the label, so Pico's `input + small` styling doesn't apply */
+.field-error {
+  display: block;
+  margin-top: calc(var(--pico-spacing) * -0.75);
+  margin-bottom: var(--pico-spacing);
+  color: var(--pico-del-color);
+}

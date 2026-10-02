@@ -1,5 +1,5 @@
 import type { Transaction, TransactionInput } from 'api/schemas';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getErrorMessage, isUnauthorized, trpc } from '../api/trpcClient';
 
 async function fetchAccount() {
@@ -15,13 +15,16 @@ export function useAccount(onSessionExpired: () => void) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const handleError = useCallback(
-    (error: unknown) => {
-      if (isUnauthorized(error)) onSessionExpired();
-      return getErrorMessage(error);
-    },
-    [onSessionExpired],
-  );
+  // Read through a ref so an unstable callback from the caller can't re-trigger the load effect
+  const onSessionExpiredRef = useRef(onSessionExpired);
+  useEffect(() => {
+    onSessionExpiredRef.current = onSessionExpired;
+  }, [onSessionExpired]);
+
+  const handleError = useCallback((error: unknown) => {
+    if (isUnauthorized(error)) onSessionExpiredRef.current();
+    return getErrorMessage(error);
+  }, []);
 
   const refresh = useCallback(() => {
     return (

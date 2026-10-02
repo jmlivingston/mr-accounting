@@ -23,7 +23,13 @@ export function TransactionForm({ onSubmit }: Props) {
 
   function fieldError(field: string) {
     const message = fieldErrors[field];
-    return message && <small id={`${field}-error`}>{message}</small>;
+    return (
+      message && (
+        <small id={`${field}-error`} className="field-error">
+          {message}
+        </small>
+      )
+    );
   }
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
@@ -67,8 +73,8 @@ export function TransactionForm({ onSubmit }: Props) {
         <label>
           Date and time
           <input name="date" type="datetime-local" defaultValue={defaultDate} required {...invalidProps('date')} />
-          {fieldError('date')}
         </label>
+        {fieldError('date')}
         <label>
           Amount
           <input
@@ -81,8 +87,8 @@ export function TransactionForm({ onSubmit }: Props) {
             required
             {...invalidProps('amount')}
           />
-          {fieldError('amount')}
         </label>
+        {fieldError('amount')}
         <label>
           Type
           <select name="type" defaultValue={transactionTypes[0]} required {...invalidProps('type')}>
@@ -92,13 +98,13 @@ export function TransactionForm({ onSubmit }: Props) {
               </option>
             ))}
           </select>
-          {fieldError('type')}
         </label>
+        {fieldError('type')}
         <label>
           Description
           <input name="description" maxLength={200} required {...invalidProps('description')} />
-          {fieldError('description')}
         </label>
+        {fieldError('description')}
         {error && <ErrorAlert>{error}</ErrorAlert>}
         <button type="submit" aria-busy={isSubmitting} disabled={isSubmitting}>
           Submit
