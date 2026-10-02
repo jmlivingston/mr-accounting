@@ -31,6 +31,10 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
+    files: ['packages/api/src/logger.ts'],
+    rules: { 'no-console': 'off' },
+  },
+  {
     files: ['packages/client/**/*.{ts,tsx}'],
     languageOptions: { globals: globals.browser },
     extends: [

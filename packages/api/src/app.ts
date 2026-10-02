@@ -1,6 +1,7 @@
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import express from 'express';
 import { limits } from './config';
+import { logger } from './logger';
 import {
   apiRateLimit,
   corsPolicy,
@@ -33,8 +34,7 @@ export function createApp() {
       createContext,
       onError: ({ error, path }) => {
         if (error.code === 'INTERNAL_SERVER_ERROR') {
-          // eslint-disable-next-line no-console -- server-side error reporting
-          console.error(`tRPC error on ${path}:`, error);
+          logger.error(`tRPC error on ${path}:`, error);
         }
       },
     }),

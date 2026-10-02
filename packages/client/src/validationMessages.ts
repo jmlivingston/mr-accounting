@@ -4,7 +4,6 @@ import { currencyFormatter } from './constants';
 
 type Issue = { path: PropertyKey[]; code: string };
 
-// Localizes schema issues by field and issue code instead of showing the schema's English text
 export function getIssueMessage({ path, code }: Issue) {
   const messages = content.validation;
   switch (path[0]) {

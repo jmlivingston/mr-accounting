@@ -2,12 +2,12 @@ import { readFileSync } from 'node:fs';
 import { createServer } from 'node:https';
 import { createApp } from './app';
 import { config } from './config';
+import { logger } from './logger';
 
 const app = createApp();
 
 const onListening = () => {
-  // eslint-disable-next-line no-console -- startup message
-  console.log(`API listening on port ${config.port}`);
+  logger.info(`API listening on port ${config.port}`);
 };
 
 if (config.tlsKeyPath && config.tlsCertPath) {

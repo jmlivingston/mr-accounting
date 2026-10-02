@@ -4,7 +4,6 @@ import path from 'node:path';
 import { afterEach, beforeEach } from 'vitest';
 import { config } from '../config';
 
-// Points the storage layer at an isolated directory for each test
 export function useTempDataDir() {
   const originalDir = config.dataDir;
   beforeEach(async () => {

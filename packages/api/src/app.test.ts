@@ -3,6 +3,7 @@ import type { Server } from 'node:http';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from './app';
 import { config, files, scopes, session } from './config';
+import { logger } from './logger';
 import { maxTransactionAmount } from './schemas/transaction';
 import { hashPassword } from './services/authService';
 import { writeJsonFile } from './storage/jsonFile';
@@ -229,7 +230,7 @@ describe('transactions', () => {
   });
 
   it('hides internal errors from the client but logs them', async () => {
-    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const logged = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
     const { cookie } = await login();
     await writeJsonFile(files.transactions, { transactions: [{ not: 'valid' }] });
     const { response, body } = await call('transactions.balance', { cookie });
