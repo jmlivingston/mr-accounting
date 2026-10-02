@@ -33,6 +33,7 @@ export function createApp() {
       createContext,
       onError: ({ error, path }) => {
         if (error.code === 'INTERNAL_SERVER_ERROR') {
+          // eslint-disable-next-line no-console -- server-side error reporting
           console.error(`tRPC error on ${path}:`, error);
         }
       },

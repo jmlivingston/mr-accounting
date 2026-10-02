@@ -8,6 +8,7 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   { ignores: ['**/dist', '**/coverage', '**/node_modules'] },
   js.configs.recommended,
+  { rules: { 'no-console': 'error' } },
   {
     files: ['**/*.{ts,tsx}'],
     extends: [...tseslint.configs.recommendedTypeChecked, ...tseslint.configs.stylisticTypeChecked],
