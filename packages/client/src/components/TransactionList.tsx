@@ -1,9 +1,9 @@
-import type { Transaction } from 'api/schemas'
-import { currencyFormatter, dateFormatter } from '../constants'
+import type { Transaction } from 'api/schemas';
+import { currencyFormatter, dateFormatter } from '../constants';
 
 type Props = {
-  transactions: Transaction[]
-}
+  transactions: Transaction[];
+};
 
 export function TransactionList({ transactions }: Props) {
   return (
@@ -36,5 +36,5 @@ export function TransactionList({ transactions }: Props) {
         </table>
       )}
     </article>
-  )
+  );
 }

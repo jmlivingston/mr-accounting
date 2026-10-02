@@ -1,13 +1,13 @@
-import { readFileSync } from 'node:fs'
-import { createServer } from 'node:https'
-import { createApp } from './app'
-import { config } from './config'
+import { readFileSync } from 'node:fs';
+import { createServer } from 'node:https';
+import { createApp } from './app';
+import { config } from './config';
 
-const app = createApp()
+const app = createApp();
 
 const onListening = () => {
-  console.log(`API listening on port ${config.port}`)
-}
+  console.log(`API listening on port ${config.port}`);
+};
 
 if (config.tlsKeyPath && config.tlsCertPath) {
   createServer(
@@ -16,7 +16,7 @@ if (config.tlsKeyPath && config.tlsCertPath) {
       cert: readFileSync(config.tlsCertPath),
     },
     app,
-  ).listen(config.port, onListening)
+  ).listen(config.port, onListening);
 } else {
-  app.listen(config.port, onListening)
+  app.listen(config.port, onListening);
 }

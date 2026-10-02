@@ -1,11 +1,11 @@
-import { createTRPCClient, httpLink, TRPCClientError } from '@trpc/client'
-import type { AppRouter } from 'api'
-import { apiUrl, csrfHeader } from '../constants'
+import { createTRPCClient, httpLink, TRPCClientError } from '@trpc/client';
+import type { AppRouter } from 'api';
+import { apiUrl, csrfHeader } from '../constants';
 
-let csrfToken: string | null = null
+let csrfToken: string | null = null;
 
 export function setCsrfToken(token: string | null) {
-  csrfToken = token
+  csrfToken = token;
 }
 
 export const trpc = createTRPCClient<AppRouter>({
@@ -16,13 +16,13 @@ export const trpc = createTRPCClient<AppRouter>({
       headers: () => (csrfToken ? { [csrfHeader]: csrfToken } : {}),
     }),
   ],
-})
+});
 
 export function getErrorMessage(error: unknown) {
-  if (error instanceof TRPCClientError) return error.message
-  return 'Unable to reach the server'
+  if (error instanceof TRPCClientError) return error.message;
+  return 'Unable to reach the server';
 }
 
 export function isUnauthorized(error: unknown) {
-  return error instanceof TRPCClientError && error.data?.code === 'UNAUTHORIZED'
+  return error instanceof TRPCClientError && error.data?.code === 'UNAUTHORIZED';
 }

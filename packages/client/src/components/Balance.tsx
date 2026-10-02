@@ -1,8 +1,8 @@
-import { currencyFormatter } from '../constants'
+import { currencyFormatter } from '../constants';
 
 type Props = {
-  balance: number | null
-}
+  balance: number | null;
+};
 
 export function Balance({ balance }: Props) {
   return (
@@ -10,9 +10,7 @@ export function Balance({ balance }: Props) {
       <header>
         <h2>Balance</h2>
       </header>
-      <h3 aria-busy={balance === null}>
-        {balance === null ? '' : currencyFormatter.format(balance)}
-      </h3>
+      <h3 aria-busy={balance === null}>{balance === null ? '' : currencyFormatter.format(balance)}</h3>
     </article>
-  )
+  );
 }

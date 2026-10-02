@@ -1,9 +1,9 @@
-import { Dashboard } from './components/Dashboard'
-import { LoginForm } from './components/LoginForm'
-import { useAuth } from './hooks/useAuth'
+import { Dashboard } from './components/Dashboard';
+import { LoginForm } from './components/LoginForm';
+import { useAuth } from './hooks/useAuth';
 
 export default function App() {
-  const { status, login, logout, expireSession } = useAuth()
+  const { status, login, logout, expireSession } = useAuth();
 
   return (
     <main className="container">
@@ -25,9 +25,7 @@ export default function App() {
       </nav>
       {status === 'loading' && <p aria-busy="true">Loading</p>}
       {status === 'unauthenticated' && <LoginForm onLogin={login} />}
-      {status === 'authenticated' && (
-        <Dashboard onSessionExpired={expireSession} />
-      )}
+      {status === 'authenticated' && <Dashboard onSessionExpired={expireSession} />}
     </main>
-  )
+  );
 }

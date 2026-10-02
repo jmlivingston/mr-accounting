@@ -1,15 +1,14 @@
-import { useAccount } from '../hooks/useAccount'
-import { Balance } from './Balance'
-import { TransactionForm } from './TransactionForm'
-import { TransactionList } from './TransactionList'
+import { useAccount } from '../hooks/useAccount';
+import { Balance } from './Balance';
+import { TransactionForm } from './TransactionForm';
+import { TransactionList } from './TransactionList';
 
 type Props = {
-  onSessionExpired: () => void
-}
+  onSessionExpired: () => void;
+};
 
 export function Dashboard({ onSessionExpired }: Props) {
-  const { balance, transactions, loadError, addTransaction } =
-    useAccount(onSessionExpired)
+  const { balance, transactions, loadError, addTransaction } = useAccount(onSessionExpired);
 
   return (
     <>
@@ -18,5 +17,5 @@ export function Dashboard({ onSessionExpired }: Props) {
       <TransactionForm onSubmit={addTransaction} />
       <TransactionList transactions={transactions} />
     </>
-  )
+  );
 }
