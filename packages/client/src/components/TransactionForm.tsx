@@ -6,7 +6,7 @@ import {
   transactionTypes,
   type TransactionInput,
 } from 'api/schemas';
-import { useRef, useState, type SubmitEvent } from 'react';
+import { useId, useRef, useState, type SubmitEvent } from 'react';
 import { content } from '../content/content';
 import { getIssueMessage } from '../validationMessages';
 import { ErrorAlert } from './ErrorAlert';
@@ -21,6 +21,7 @@ function toLocalDateTimeValue(date: Date) {
 }
 
 export function TransactionForm({ onSubmit }: Props) {
+  const headingId = useId();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,6 +61,8 @@ export function TransactionForm({ onSubmit }: Props) {
       for (const issue of parsed.error.issues) errors[String(issue.path[0])] ??= getIssueMessage(issue);
       setFieldErrors(errors);
       setError(null);
+      const firstInvalid = form.elements.namedItem(Object.keys(errors)[0] ?? '');
+      if (firstInvalid instanceof HTMLElement) firstInvalid.focus();
       return;
     }
     submitInFlightRef.current = true;
@@ -81,9 +84,9 @@ export function TransactionForm({ onSubmit }: Props) {
   return (
     <article>
       <header>
-        <h2>{content.transactionForm.heading}</h2>
+        <h2 id={headingId}>{content.transactionForm.heading}</h2>
       </header>
-      <form onSubmit={(event) => void handleSubmit(event)} key={defaultDate}>
+      <form aria-labelledby={headingId} onSubmit={(event) => void handleSubmit(event)} key={defaultDate}>
         <div className="grid">
           <div>
             <label>

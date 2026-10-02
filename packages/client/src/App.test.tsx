@@ -58,6 +58,17 @@ describe('App', () => {
     expect(screen.getByText('Loading')).toHaveAttribute('aria-busy', 'true');
   });
 
+  it('has a single top-level heading with header and main landmarks', async () => {
+    mocks.session.mockResolvedValue({ csrfToken: null });
+    renderApp();
+    await screen.findByRole('heading', { name: 'Log in' });
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(content.app.title);
+    expect(screen.getByRole('navigation').closest('header')).not.toBeNull();
+    expect(screen.getByRole('main')).not.toContainElement(screen.getByRole('navigation'));
+    expect(screen.getByRole('main')).toContainElement(screen.getByRole('form', { name: 'Log in' }));
+  });
+
   it('shows the login form when there is no session', async () => {
     mocks.session.mockResolvedValue({ csrfToken: null });
     renderApp();
@@ -68,7 +79,7 @@ describe('App', () => {
   it('shows the dashboard with account data for an existing session', async () => {
     mocks.session.mockResolvedValue({ csrfToken: 'csrf' });
     renderApp();
-    expect(await screen.findByRole('heading', { name: '$1,500.00' })).toBeInTheDocument();
+    expect(await screen.findByText('$1,500.00', { selector: 'output' })).toBeInTheDocument();
     expect(screen.getByText('Salary')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'New transaction' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Log out' })).toBeInTheDocument();
@@ -84,7 +95,7 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Password'), 'secret');
     await user.click(screen.getByRole('button', { name: 'Log in' }));
 
-    expect(await screen.findByRole('heading', { name: '$1,500.00' })).toBeInTheDocument();
+    expect(await screen.findByText('$1,500.00', { selector: 'output' })).toBeInTheDocument();
     expect(mocks.login).toHaveBeenCalledWith({ username: 'alice', password: 'secret' });
   });
 
@@ -103,7 +114,7 @@ describe('App', () => {
   it('returns to the login form when the session ends mid-use', async () => {
     mocks.session.mockResolvedValue({ csrfToken: 'csrf' });
     renderApp();
-    expect(await screen.findByRole('heading', { name: '$1,500.00' })).toBeInTheDocument();
+    expect(await screen.findByText('$1,500.00', { selector: 'output' })).toBeInTheDocument();
 
     act(() => sessionStore.end());
 

@@ -149,4 +149,15 @@ describe('TransactionForm', () => {
     expect(field('Date and time')).toHaveAttribute('aria-invalid', 'true');
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it('names the form after its heading', () => {
+    setup();
+    expect(screen.getByRole('form', { name: content.transactionForm.heading })).toBeInTheDocument();
+  });
+
+  it('moves focus to the first invalid field', async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+    expect(field('Amount')).toHaveFocus();
+  });
 });

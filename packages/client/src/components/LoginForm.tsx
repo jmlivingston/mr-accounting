@@ -1,5 +1,5 @@
 import { loginInputSchema } from 'api/schemas';
-import { useRef, useState, type SubmitEvent } from 'react';
+import { useId, useRef, useState, type SubmitEvent } from 'react';
 import { content } from '../content/content';
 import { getErrorMessage } from '../api/trpcClient';
 import { ErrorAlert } from './ErrorAlert';
@@ -9,6 +9,7 @@ type Props = {
 };
 
 export default function LoginForm({ onLogin }: Props) {
+  const headingId = useId();
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // State alone can't block a second submit that fires before the next render
@@ -37,9 +38,9 @@ export default function LoginForm({ onLogin }: Props) {
   return (
     <article>
       <header>
-        <h2>{content.login.heading}</h2>
+        <h2 id={headingId}>{content.login.heading}</h2>
       </header>
-      <form onSubmit={(event) => void handleSubmit(event)}>
+      <form aria-labelledby={headingId} onSubmit={(event) => void handleSubmit(event)}>
         <label>
           {content.login.username}
           <input name="username" autoComplete="username" required aria-invalid={error ? true : undefined} />

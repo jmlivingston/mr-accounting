@@ -7,7 +7,11 @@ const LoginForm = lazy(() => import('./components/LoginForm'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 
 function Loading() {
-  return <p aria-busy="true">{content.app.loading}</p>;
+  return (
+    <p role="status" aria-busy="true">
+      {content.app.loading}
+    </p>
+  );
 }
 
 export default function App() {
@@ -19,7 +23,7 @@ export default function App() {
         <nav>
           <ul>
             <li>
-              <strong>{content.app.title}</strong>
+              <h1 className="app-title">{content.app.title}</h1>
             </li>
           </ul>
           {status === sessionStatuses.authenticated && (

@@ -43,4 +43,11 @@ describe('TransactionList', () => {
     expect(within(salary).getByText(/Mar 1, 2026/)).toBeInTheDocument();
     expect(screen.getByText('$12.30')).toBeInTheDocument();
   });
+
+  it('marks column headers and exposes machine-readable dates', () => {
+    render(<TransactionList transactions={transactions} />);
+    expect(screen.getAllByRole('columnheader').every((header) => header.getAttribute('scope') === 'col')).toBe(true);
+    const [salary] = screen.getAllByRole('row').slice(1);
+    expect(salary.querySelector('time')).toHaveAttribute('datetime', transactions[0]?.date);
+  });
 });
