@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loginInputSchema } from './auth';
 import {
+  dateRuleReasons,
   maxDescriptionLength,
+  maxFutureSkewMs,
   maxTransactionAmount,
   minTransactionAmount,
   transactionInputSchema,
@@ -14,6 +16,60 @@ const validTransaction = {
   type: 'debit',
   description: 'Coffee',
 };
+
+const now = new Date('2026-06-01T12:00:00Z');
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(now);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+function dateIssueReasons(date: string): unknown[] {
+  const result = transactionInputSchema.safeParse({ ...validTransaction, date });
+  const issues = result.error?.issues ?? [];
+  return issues.map((issue): unknown => (issue.code === 'custom' ? issue.params?.reason : issue.code));
+}
+
+describe('transaction date rules', () => {
+  it('accepts the current time', () => {
+    expect(dateIssueReasons(now.toISOString())).toEqual([]);
+  });
+
+  it('accepts a date within the clock skew allowance', () => {
+    expect(dateIssueReasons(new Date(now.getTime() + maxFutureSkewMs).toISOString())).toEqual([]);
+  });
+
+  it('rejects a date beyond the clock skew allowance', () => {
+    expect(dateIssueReasons(new Date(now.getTime() + maxFutureSkewMs + 1000).toISOString())).toEqual([
+      dateRuleReasons.future,
+    ]);
+  });
+
+  it('rejects a date in the far future', () => {
+    expect(dateIssueReasons('2030-01-01T00:00:00Z')).toEqual([dateRuleReasons.future]);
+  });
+
+  it('accepts a date exactly one year ago', () => {
+    expect(dateIssueReasons('2025-06-01T12:00:00Z')).toEqual([]);
+  });
+
+  it('rejects a date just over one year ago', () => {
+    expect(dateIssueReasons('2025-06-01T11:59:59Z')).toEqual([dateRuleReasons.tooOld]);
+  });
+
+  it('compares across time zone offsets', () => {
+    expect(dateIssueReasons('2026-06-01T05:00:00-07:00')).toEqual([]);
+    expect(dateIssueReasons('2026-06-01T12:30:00-07:00')).toEqual([dateRuleReasons.future]);
+  });
+
+  it('reports only the format issue for an unparseable date', () => {
+    expect(dateIssueReasons('yesterday')).toEqual(['invalid_format']);
+  });
+});
 
 describe('transactionInputSchema', () => {
   it('accepts a valid transaction', () => {
@@ -75,6 +131,11 @@ describe('transactionInputSchema', () => {
 });
 
 describe('transactionSchema', () => {
+  it('accepts stored transactions of any age', () => {
+    const id = '3f2b8c1e-5d4a-4f6b-9a7c-1e2d3c4b5a69';
+    expect(transactionSchema.safeParse({ ...validTransaction, id, date: '2015-01-01T00:00:00Z' }).success).toBe(true);
+  });
+
   it('requires a UUID id', () => {
     expect(transactionSchema.safeParse({ ...validTransaction, id: 'nope' }).success).toBe(false);
     const id = '3f2b8c1e-5d4a-4f6b-9a7c-1e2d3c4b5a69';

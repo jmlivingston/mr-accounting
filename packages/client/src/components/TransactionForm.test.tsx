@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { maxDescriptionLength, maxTransactionAmount, minTransactionAmount, type TransactionInput } from 'api/schemas';
 import { describe, expect, it, vi } from 'vitest';
@@ -115,5 +115,49 @@ describe('TransactionForm', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Insufficient funds');
     expect(field('Amount')).toHaveValue(10);
     expect(screen.getByRole('button', { name: 'Submit' })).toBeEnabled();
+  });
+
+  it('shows busy and disabled while submitting and ignores a repeated submit', async () => {
+    let finish: () => void = () => undefined;
+    const pending = new Promise<void>((resolve) => (finish = resolve));
+    const { user, onSubmit } = setup(vi.fn<Submit>().mockReturnValue(pending));
+    await fill(user, { amount: '10', description: 'Lunch' });
+    const button = screen.getByRole('button', { name: 'Submit' });
+    const form = button.closest('form')!;
+
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+
+    finish();
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(button).toHaveAttribute('aria-busy', 'false');
+  });
+
+  it.each([
+    ['in the future', '2099-01-01T00:00', content.validation.date.future],
+    ['more than a year ago', '2000-01-01T00:00', content.validation.date.tooOld],
+  ])('rejects a date %s without submitting', async (_name, date, message) => {
+    const { user, onSubmit } = setup();
+    fireEvent.change(field('Date and time'), { target: { value: date } });
+    await fill(user, { amount: '10', description: 'Dated' });
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(field('Date and time')).toHaveAttribute('aria-invalid', 'true');
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('names the form after its heading', () => {
+    setup();
+    expect(screen.getByRole('form', { name: content.transactionForm.heading })).toBeInTheDocument();
+  });
+
+  it('moves focus to the first invalid field', async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: 'Submit' }));
+    expect(field('Amount')).toHaveFocus();
   });
 });

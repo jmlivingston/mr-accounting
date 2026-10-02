@@ -1,40 +1,49 @@
 import { lazy, Suspense } from 'react';
+import { sessionStatuses } from './constants';
 import { content } from './content/content';
-import { useAuth } from './hooks/useAuth';
+import { login, logout, useSession } from './session/session';
 
 const LoginForm = lazy(() => import('./components/LoginForm'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 
 function Loading() {
-  return <p aria-busy="true">{content.app.loading}</p>;
+  return (
+    <p role="status" aria-busy="true">
+      {content.app.loading}
+    </p>
+  );
 }
 
 export default function App() {
-  const { status, login, logout, expireSession } = useAuth();
+  const status = useSession();
 
   return (
-    <main className="container">
-      <nav>
-        <ul>
-          <li>
-            <strong>{content.app.title}</strong>
-          </li>
-        </ul>
-        {status === 'authenticated' && (
+    <>
+      <header className="container app-header">
+        <nav>
           <ul>
             <li>
-              <button className="secondary" onClick={() => void logout()}>
-                {content.app.logout}
-              </button>
+              <h1 className="app-title">{content.app.title}</h1>
             </li>
           </ul>
-        )}
-      </nav>
-      {status === 'loading' && <Loading />}
-      <Suspense fallback={<Loading />}>
-        {status === 'unauthenticated' && <LoginForm onLogin={login} />}
-        {status === 'authenticated' && <Dashboard onSessionExpired={expireSession} />}
-      </Suspense>
-    </main>
+          {status === sessionStatuses.authenticated && (
+            <ul>
+              <li>
+                <button className="secondary" onClick={() => void logout()}>
+                  {content.app.logout}
+                </button>
+              </li>
+            </ul>
+          )}
+        </nav>
+      </header>
+      <main className="container">
+        {status === sessionStatuses.loading && <Loading />}
+        <Suspense fallback={<Loading />}>
+          {status === sessionStatuses.unauthenticated && <LoginForm onLogin={login} />}
+          {status === sessionStatuses.authenticated && <Dashboard />}
+        </Suspense>
+      </main>
+    </>
   );
 }

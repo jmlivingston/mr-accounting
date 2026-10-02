@@ -13,3 +13,25 @@
   margin-bottom: var(--pico-spacing);
   color: var(--pico-del-color);
 }
+
+.app-title {
+  margin: 0;
+  font-size: inherit;
+  font-weight: 700;
+}
+
+.balance {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin-bottom: var(--pico-spacing);
+  border-bottom: var(--pico-border-width) solid var(--pico-muted-border-color);
+  background-color: var(--pico-background-color);
+}

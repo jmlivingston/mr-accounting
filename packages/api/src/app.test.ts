@@ -3,6 +3,8 @@ import type { Server } from 'node:http';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from './app';
 import { config, files, scopes, session } from './config';
+import { createLedger } from './ledger/ledger';
+import { createMemoryLedgerAdapter } from './ledger/memoryAdapter';
 import { logger } from './logger';
 import { maxTransactionAmount } from './schemas/transaction';
 import { hashPassword } from './services/authService';
@@ -12,11 +14,13 @@ import { useTempDataDir } from './test/tempDataDir';
 const password = 'Sup3r-secret';
 const credentials = { username: 'tester', password };
 
+const ledgerAdapter = createMemoryLedgerAdapter();
+
 let server: Server;
 let baseUrl: string;
 
 beforeAll(async () => {
-  server = createApp().listen(0);
+  server = createApp({ ledger: createLedger(ledgerAdapter) }).listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
   baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });
@@ -32,7 +36,10 @@ async function seedUser(userScopes: string[] = [scopes.transactionsRead, scopes.
   await writeJsonFile(files.auth, { users: [{ ...user, ...(await hashPassword(password)) }] });
 }
 
-beforeEach(() => seedUser());
+beforeEach(async () => {
+  await ledgerAdapter.save([]);
+  await seedUser();
+});
 
 type TrpcResult = {
   result?: { data: Record<string, unknown> };
@@ -74,7 +81,12 @@ async function login(userScopes: string[] = [scopes.transactionsRead, scopes.tra
   return created;
 }
 
-const transaction = { date: '2026-03-01T12:00:00Z', amount: 100, type: 'credit', description: 'Salary' };
+const transaction = {
+  date: new Date(Date.now() - 86_400_000).toISOString(),
+  amount: 100,
+  type: 'credit',
+  description: 'Salary',
+};
 
 describe('auth.login', () => {
   it('sets a hardened session cookie and returns a CSRF token', async () => {
@@ -156,20 +168,17 @@ describe('auth.session and auth.logout', () => {
 
 describe('transactions', () => {
   it('requires authentication to read', async () => {
-    expect((await call('transactions.balance')).response.status).toBe(401);
-    expect((await call('transactions.recent')).response.status).toBe(401);
+    expect((await call('transactions.account')).response.status).toBe(401);
   });
 
-  it('creates a transaction and reflects it in balance and recent', async () => {
+  it('creates a transaction and reflects it in the account', async () => {
     const { cookie, csrf } = await login();
     const created = await call('transactions.create', { method: 'POST', input: transaction, cookie, csrf });
     expect(created.response.status).toBe(200);
     expect(created.body.result?.data).toMatchObject(transaction);
 
-    const balance = await call('transactions.balance', { cookie });
-    expect(balance.body.result?.data).toEqual({ balance: 100 });
-    const recent = await call('transactions.recent', { cookie });
-    expect(recent.body.result?.data).toHaveLength(1);
+    const account = await call('transactions.account', { cookie });
+    expect(account.body.result?.data).toMatchObject({ balance: 100, transactions: [transaction] });
   });
 
   it('rejects creation without a CSRF token', async () => {
@@ -195,12 +204,12 @@ describe('transactions', () => {
     expect(response.status).toBe(403);
     expect(body.error?.data.code).toBe('FORBIDDEN');
     expect(body.error?.data.reason).toBeUndefined();
-    expect((await call('transactions.balance', { cookie })).response.status).toBe(200);
+    expect((await call('transactions.account', { cookie })).response.status).toBe(200);
   });
 
   it('requires the read scope to read', async () => {
     const { cookie } = await login([scopes.transactionsWrite]);
-    expect((await call('transactions.balance', { cookie })).response.status).toBe(403);
+    expect((await call('transactions.account', { cookie })).response.status).toBe(403);
   });
 
   it('reports field-level validation errors', async () => {
@@ -214,6 +223,33 @@ describe('transactions', () => {
     expect(response.status).toBe(400);
     expect(body.error?.message).toBe(`amount: Too big: expected number to be <=${maxTransactionAmount}`);
     expect(body.error?.data.reason).toBe('validation');
+  });
+
+  it('rejects a transaction dated in the future', async () => {
+    const { cookie, csrf } = await login();
+    const date = new Date(Date.now() + 86_400_000).toISOString();
+    const { response, body } = await call('transactions.create', {
+      method: 'POST',
+      input: { ...transaction, date },
+      cookie,
+      csrf,
+    });
+    expect(response.status).toBe(400);
+    expect(body.error?.message).toBe('date: Date cannot be in the future');
+    expect(body.error?.data.reason).toBe('validation');
+  });
+
+  it('rejects a transaction dated more than a year ago', async () => {
+    const { cookie, csrf } = await login();
+    const date = new Date(Date.now() - 400 * 86_400_000).toISOString();
+    const { response, body } = await call('transactions.create', {
+      method: 'POST',
+      input: { ...transaction, date },
+      cookie,
+      csrf,
+    });
+    expect(response.status).toBe(400);
+    expect(body.error?.message).toBe('date: Date cannot be more than 1 year ago');
   });
 
   it('rejects a debit that overdraws the account', async () => {
@@ -232,13 +268,14 @@ describe('transactions', () => {
   it('hides internal errors from the client but logs them', async () => {
     const logged = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
     const { cookie } = await login();
-    await writeJsonFile(files.transactions, { transactions: [{ not: 'valid' }] });
-    const { response, body } = await call('transactions.balance', { cookie });
+    const failingLoad = vi.spyOn(ledgerAdapter, 'load').mockRejectedValueOnce(new Error('disk failure'));
+    const { response, body } = await call('transactions.account', { cookie });
     expect(response.status).toBe(500);
     expect(body.error?.message).toBe('Internal server error');
     expect(body.error?.data.reason).toBeUndefined();
-    expect(logged).toHaveBeenCalledWith('tRPC error on transactions.balance:', expect.anything());
+    expect(logged).toHaveBeenCalledWith('tRPC error on transactions.account:', expect.anything());
     logged.mockRestore();
+    failingLoad.mockRestore();
   });
 });
 

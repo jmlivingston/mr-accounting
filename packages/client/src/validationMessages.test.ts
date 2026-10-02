@@ -1,9 +1,18 @@
 import { maxDescriptionLength, transactionInputSchema } from 'api/schemas';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { content } from './content/content';
 import { getIssueMessage } from './validationMessages';
 
 const valid = { date: '2026-01-01T00:00:00.000Z', amount: 5, type: 'debit', description: 'Coffee' };
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime('2026-06-01T12:00:00Z');
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 function messagesFor(override: Record<string, unknown>) {
   const result = transactionInputSchema.safeParse({ ...valid, ...override });
@@ -25,6 +34,14 @@ describe('getIssueMessage', () => {
 
   it('describes an invalid date', () => {
     expect(messagesFor({ date: 'tomorrow' })).toEqual([content.validation.date.invalid]);
+  });
+
+  it('describes a date in the future', () => {
+    expect(messagesFor({ date: '2026-06-02T00:00:00.000Z' })).toEqual([content.validation.date.future]);
+  });
+
+  it('describes a date more than a year ago', () => {
+    expect(messagesFor({ date: '2025-05-31T00:00:00.000Z' })).toEqual([content.validation.date.tooOld]);
   });
 
   it('describes an invalid type', () => {

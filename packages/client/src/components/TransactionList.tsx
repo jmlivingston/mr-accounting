@@ -18,16 +18,18 @@ export function TransactionList({ transactions }: Props) {
         <table>
           <thead>
             <tr>
-              <th>{content.transactionList.columns.date}</th>
-              <th>{content.transactionList.columns.description}</th>
-              <th>{content.transactionList.columns.type}</th>
-              <th>{content.transactionList.columns.amount}</th>
+              <th scope="col">{content.transactionList.columns.date}</th>
+              <th scope="col">{content.transactionList.columns.description}</th>
+              <th scope="col">{content.transactionList.columns.type}</th>
+              <th scope="col">{content.transactionList.columns.amount}</th>
             </tr>
           </thead>
           <tbody>
             {transactions.map(({ id, date, description, type, amount }) => (
               <tr key={id}>
-                <td>{dateFormatter.format(new Date(date))}</td>
+                <td>
+                  <time dateTime={date}>{dateFormatter.format(new Date(date))}</time>
+                </td>
                 <td>{description}</td>
                 <td>{content.transactionTypes[type]}</td>
                 <td>{currencyFormatter.format(amount)}</td>
